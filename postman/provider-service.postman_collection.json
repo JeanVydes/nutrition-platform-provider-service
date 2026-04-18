@@ -1,0 +1,528 @@
+{
+    "info": {
+        "_postman_id": "d5d24efd-3f57-4c2e-b885-8e0bb9fe4472",
+        "name": "provider-service",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "event": [
+        {
+            "listen": "prerequest",
+            "script": {
+                "type": "text/javascript",
+                "exec": [
+                    "const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;",
+                    "",
+                    "function ensureUuid(varName) {",
+                    "  const current = pm.environment.get(varName);",
+                    "  if (!current || !uuidRegex.test(current)) {",
+                    "    const generated = pm.variables.replaceIn('{{$guid}}');",
+                    "    pm.environment.set(varName, generated);",
+                    "  }",
+                    "}",
+                    "",
+                    "if (!pm.environment.get('BASE_URL')) {",
+                    "  pm.environment.set('BASE_URL', 'http://localhost:8080');",
+                    "}",
+                    "",
+                    "if (!pm.environment.get('ACCESS_TOKEN')) {",
+                    "  pm.environment.set('ACCESS_TOKEN', 'offline-token');",
+                    "}",
+                    "",
+                    "ensureUuid('PROVIDER_ACCOUNT_ID');",
+                    "ensureUuid('WORKER_ACCOUNT_ID');",
+                    "ensureUuid('SCHOOL_ID');"
+                ]
+            }
+        }
+    ],
+    "item": [
+        {
+            "name": "Health",
+            "item": [
+                {
+                    "name": "Health Check",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{BASE_URL}}/health",
+                            "host": [
+                                "{{BASE_URL}}"
+                            ],
+                            "path": [
+                                "health"
+                            ]
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test('status 200', function () {",
+                                    "  pm.response.to.have.status(200);",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "Providers",
+            "item": [
+                {
+                    "name": "Create Provider (OK)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{ACCESS_TOKEN}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"accountId\": \"{{PROVIDER_ACCOUNT_ID}}\",\n  \"name\": \"Fresh Foods S.A.S\",\n  \"companyRegistration\": \"NIT-900123456\",\n  \"contactEmail\": \"ops@freshfoods.co\",\n  \"contactPhone\": \"+573001234567\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{BASE_URL}}/providers",
+                            "host": [
+                                "{{BASE_URL}}"
+                            ],
+                            "path": [
+                                "providers"
+                            ]
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test('status 201', function () {",
+                                    "  pm.response.to.have.status(201);",
+                                    "});",
+                                    "const json = pm.response.json();",
+                                    "if (json && json.id) {",
+                                    "  pm.environment.set('PROVIDER_ID', json.id);",
+                                    "}"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Create Provider (Duplicate Account)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{ACCESS_TOKEN}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"accountId\": \"{{PROVIDER_ACCOUNT_ID}}\",\n  \"name\": \"Fresh Foods Duplicate\",\n  \"companyRegistration\": \"NIT-900123456\",\n  \"contactEmail\": \"ops-duplicate@freshfoods.co\",\n  \"contactPhone\": \"+573001234567\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{BASE_URL}}/providers",
+                            "host": [
+                                "{{BASE_URL}}"
+                            ],
+                            "path": [
+                                "providers"
+                            ]
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test('status is 4xx for duplicate', function () {",
+                                    "  pm.expect(pm.response.code).to.be.oneOf([400, 409]);",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Create Provider (Validation Error)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{ACCESS_TOKEN}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"accountId\": \"not-a-uuid\",\n  \"name\": \"\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{BASE_URL}}/providers",
+                            "host": [
+                                "{{BASE_URL}}"
+                            ],
+                            "path": [
+                                "providers"
+                            ]
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test('status 400 validation', function () {",
+                                    "  pm.response.to.have.status(400);",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "Cafeterias",
+            "item": [
+                {
+                    "name": "Create Cafeteria (OK)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{ACCESS_TOKEN}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"schoolId\": \"{{SCHOOL_ID}}\",\n  \"providerId\": \"{{PROVIDER_ID}}\",\n  \"name\": \"Cafetería Central Sede Norte\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{BASE_URL}}/cafeterias",
+                            "host": [
+                                "{{BASE_URL}}"
+                            ],
+                            "path": [
+                                "cafeterias"
+                            ]
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test('status 201', function () {",
+                                    "  pm.response.to.have.status(201);",
+                                    "});",
+                                    "const json = pm.response.json();",
+                                    "if (json && json.id) {",
+                                    "  pm.environment.set('CAFETERIA_ID', json.id);",
+                                    "}"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Create Cafeteria (Provider Not Found)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{ACCESS_TOKEN}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"schoolId\": \"{{SCHOOL_ID}}\",\n  \"providerId\": \"00000000-0000-0000-0000-000000000999\",\n  \"name\": \"Cafetería Fallback\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{BASE_URL}}/cafeterias",
+                            "host": [
+                                "{{BASE_URL}}"
+                            ],
+                            "path": [
+                                "cafeterias"
+                            ]
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test('status 4xx when provider missing', function () {",
+                                    "  pm.expect(pm.response.code).to.be.oneOf([400, 404]);",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "Workers",
+            "item": [
+                {
+                    "name": "Create Worker (OK)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{ACCESS_TOKEN}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"accountId\": \"{{WORKER_ACCOUNT_ID}}\",\n  \"providerId\": \"{{PROVIDER_ID}}\",\n  \"position\": \"Cocinero\",\n  \"contractType\": \"fijo\",\n  \"hireDate\": \"2026-01-10\",\n  \"salary\": \"1800000.00\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{BASE_URL}}/workers",
+                            "host": [
+                                "{{BASE_URL}}"
+                            ],
+                            "path": [
+                                "workers"
+                            ]
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test('status 201', function () {",
+                                    "  pm.response.to.have.status(201);",
+                                    "});",
+                                    "const json = pm.response.json();",
+                                    "if (json && json.id) {",
+                                    "  pm.environment.set('WORKER_ID', json.id);",
+                                    "}"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Create Worker (Provider Not Found)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{ACCESS_TOKEN}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"accountId\": \"11111111-1111-1111-1111-111111111111\",\n  \"providerId\": \"00000000-0000-0000-0000-000000000999\",\n  \"position\": \"Auxiliar\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{BASE_URL}}/workers",
+                            "host": [
+                                "{{BASE_URL}}"
+                            ],
+                            "path": [
+                                "workers"
+                            ]
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test('status 4xx when provider missing', function () {",
+                                    "  pm.expect(pm.response.code).to.be.oneOf([400, 404]);",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "Assignments",
+            "item": [
+                {
+                    "name": "Assign Worker to Cafeteria (OK)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{ACCESS_TOKEN}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"workerId\": \"{{WORKER_ID}}\",\n  \"cafeteriaId\": \"{{CAFETERIA_ID}}\",\n  \"role\": \"Encargado de turno\",\n  \"startDate\": \"2026-02-01\",\n  \"endDate\": null\n}"
+                        },
+                        "url": {
+                            "raw": "{{BASE_URL}}/workers/assignments",
+                            "host": [
+                                "{{BASE_URL}}"
+                            ],
+                            "path": [
+                                "workers",
+                                "assignments"
+                            ]
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test('status 201', function () {",
+                                    "  pm.response.to.have.status(201);",
+                                    "});",
+                                    "const json = pm.response.json();",
+                                    "if (json && json.id) {",
+                                    "  pm.environment.set('ASSIGNMENT_ID', json.id);",
+                                    "}"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Assign Worker (Missing Worker)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{ACCESS_TOKEN}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"workerId\": \"00000000-0000-0000-0000-000000000998\",\n  \"cafeteriaId\": \"{{CAFETERIA_ID}}\",\n  \"role\": \"Auxiliar\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{BASE_URL}}/workers/assignments",
+                            "host": [
+                                "{{BASE_URL}}"
+                            ],
+                            "path": [
+                                "workers",
+                                "assignments"
+                            ]
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test('status 4xx when worker missing', function () {",
+                                    "  pm.expect(pm.response.code).to.be.oneOf([400, 404]);",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ]
+                }
+            ]
+        }
+    ],
+    "variable": [
+        {
+            "key": "BASE_URL",
+            "value": "http://localhost:8080"
+        },
+        {
+            "key": "ACCESS_TOKEN",
+            "value": "offline-token"
+        },
+        {
+            "key": "PROVIDER_ACCOUNT_ID",
+            "value": "11111111-1111-1111-1111-111111111111"
+        },
+        {
+            "key": "WORKER_ACCOUNT_ID",
+            "value": "22222222-2222-2222-2222-222222222222"
+        },
+        {
+            "key": "SCHOOL_ID",
+            "value": "33333333-3333-3333-3333-333333333333"
+        },
+        {
+            "key": "PROVIDER_ID",
+            "value": ""
+        },
+        {
+            "key": "CAFETERIA_ID",
+            "value": ""
+        },
+        {
+            "key": "WORKER_ID",
+            "value": ""
+        },
+        {
+            "key": "ASSIGNMENT_ID",
+            "value": ""
+        }
+    ]
+}

@@ -1,0 +1,53 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: provider-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: ubicaciones
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./migrations/provider-service-schema.sql:/docker-entrypoint-initdb.d/01-provider-service-schema.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d ubicaciones"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  provider-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: provider-service
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_NAME: ubicaciones
+      DB_MAX_CONNECTIONS: 10
+      DB_IDLE_TIMEOUT: 30000
+      DB_CONNECTION_TIMEOUT: 2000
+      NODE_ENV: development
+      HOST: 0.0.0.0
+      PORT: 8080
+      OFFLINE: "true"
+      OFFLINE_ACCOUNT_ID: mock-account-id
+      OFFLINE_ROLES: developer
+      OFFLINE_SCOPES: "*"
+      CORS_ORIGINS: ""
+      RATE_LIMIT_MAX: 120
+      RATE_LIMIT_TIME_WINDOW: 1 minute
+      SECURITY_SERVICE_URL: http://security-service:4000
+      SECURITY_INTROSPECTION_PATH: /auth/introspect
+    ports:
+      - "8080:8080"
+
+volumes:
+  postgres_data:
