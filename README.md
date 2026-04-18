@@ -1,4 +1,4 @@
-# location_service
+# provider-service
 
 check out the postman workspace for testing the location service:
 
