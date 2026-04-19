@@ -6,7 +6,10 @@ import { FindWorkerAssignmentsByWorkerIdUseCase } from '../../../../../core/appl
 import { FindWorkerByAccountIdUseCase } from '../../../../../core/application/use-cases/workers/find-worker-by-account-id.use-case';
 import { FindWorkerByIdUseCase } from '../../../../../core/application/use-cases/workers/find-worker-by-id.use-case';
 import { FindWorkersByProviderIdUseCase } from '../../../../../core/application/use-cases/workers/find-workers-by-provider-id.use-case';
+import { DeleteWorkerUseCase } from '../../../../../core/application/use-cases/workers/delete-worker.use-case';
+import { DeleteWorkerAssignmentUseCase } from '../../../../../core/application/use-cases/workers/delete-worker-assignment.use-case';
 import { RegisterWorkerUseCase } from '../../../../../core/application/use-cases/workers/register-worker.use-case';
+import { UpdateWorkerUseCase } from '../../../../../core/application/use-cases/workers/update-worker.use-case';
 import { AssignWorkerCafeteriaUseCase } from '../../../../../core/application/use-cases/workers/assign-worker-cafeteria.use-case';
 import { z } from 'zod';
 
@@ -15,8 +18,12 @@ export const registerWorkerSchema = z.object({
   providerId: z.string().uuid(),
   position: z.string().optional(),
   contractType: z.string().optional(),
-  hireDate: z.string().optional(),
-  salary: z.string().optional(),
+  hireDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'hireDate must be YYYY-MM-DD').optional(),
+  salary: z
+    .string()
+    .regex(/^\d+(\.\d{1,2})?$/, 'salary must be a numeric string with up to 2 decimals')
+    .refine((value) => Number(value) <= 99999999.99, 'salary exceeds max allowed (99999999.99)')
+    .optional(),
 });
 
 export const assignWorkerSchema = z.object({
@@ -27,10 +34,29 @@ export const assignWorkerSchema = z.object({
   endDate: z.string().optional(),
 });
 
+export const updateWorkerSchema = z.object({
+  accountId: z.string().uuid().optional(),
+  providerId: z.string().uuid().optional(),
+  position: z.string().nullable().optional(),
+  contractType: z.string().nullable().optional(),
+  hireDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'hireDate must be YYYY-MM-DD').nullable().optional(),
+  salary: z
+    .string()
+    .regex(/^\d+(\.\d{1,2})?$/, 'salary must be a numeric string with up to 2 decimals')
+    .refine((value) => Number(value) <= 99999999.99, 'salary exceeds max allowed (99999999.99)')
+    .nullable()
+    .optional(),
+}).refine((value) => Object.keys(value).length > 0, {
+  message: 'At least one field is required to update worker',
+});
+
 export class WorkerController {
   constructor(
     private registerWorkerUseCase: RegisterWorkerUseCase,
+    private updateWorkerUseCase: UpdateWorkerUseCase,
+    private deleteWorkerUseCase: DeleteWorkerUseCase,
     private assignWorkerCafeteriaUseCase: AssignWorkerCafeteriaUseCase,
+    private deleteWorkerAssignmentUseCase: DeleteWorkerAssignmentUseCase,
     private findAllWorkersUseCase: FindAllWorkersUseCase,
     private findWorkerByIdUseCase: FindWorkerByIdUseCase,
     private findWorkersByProviderIdUseCase: FindWorkersByProviderIdUseCase,
@@ -51,11 +77,60 @@ export class WorkerController {
     }
   }
 
+  async updateWorker(req: FastifyRequest, reply: FastifyReply) {
+    try {
+      const params = z.object({ id: z.string().uuid() }).parse(req.params);
+      const data = updateWorkerSchema.parse(req.body);
+      const worker = await this.updateWorkerUseCase.execute(params.id, data);
+
+      if (!worker) {
+        return reply.status(404).send({ message: 'Worker not found' });
+      }
+
+      return reply.status(200).send(worker);
+    } catch (error) {
+      if (error instanceof z.ZodError) return reply.status(400).send(error.flatten());
+      return reply.status(400).send({ message: (error as Error).message });
+    }
+  }
+
   async assignWorker(req: FastifyRequest, reply: FastifyReply) {
     try {
       const data = assignWorkerSchema.parse(req.body);
       const assignment = await this.assignWorkerCafeteriaUseCase.execute(data);
       return reply.status(201).send(assignment);
+    } catch (error) {
+      if (error instanceof z.ZodError) return reply.status(400).send(error.flatten());
+      return reply.status(400).send({ message: (error as Error).message });
+    }
+  }
+
+  async deleteWorker(req: FastifyRequest, reply: FastifyReply) {
+    try {
+      const params = z.object({ id: z.string().uuid() }).parse(req.params);
+      const deleted = await this.deleteWorkerUseCase.execute(params.id);
+
+      if (!deleted) {
+        return reply.status(404).send({ message: 'Worker not found' });
+      }
+
+      return reply.status(204).send();
+    } catch (error) {
+      if (error instanceof z.ZodError) return reply.status(400).send(error.flatten());
+      return reply.status(400).send({ message: (error as Error).message });
+    }
+  }
+
+  async deleteAssignment(req: FastifyRequest, reply: FastifyReply) {
+    try {
+      const params = z.object({ id: z.string().uuid() }).parse(req.params);
+      const deleted = await this.deleteWorkerAssignmentUseCase.execute(params.id);
+
+      if (!deleted) {
+        return reply.status(404).send({ message: 'Assignment not found' });
+      }
+
+      return reply.status(204).send();
     } catch (error) {
       if (error instanceof z.ZodError) return reply.status(400).send(error.flatten());
       return reply.status(400).send({ message: (error as Error).message });

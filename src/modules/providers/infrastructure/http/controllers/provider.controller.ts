@@ -1,7 +1,9 @@
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { FindAllProvidersUseCase } from '../../../../../core/application/use-cases/providers/find-all-providers.use-case';
 import { FindProviderByAccountIdUseCase } from '../../../../../core/application/use-cases/providers/find-provider-by-account-id.use-case';
+import { DeleteProviderUseCase } from '../../../../../core/application/use-cases/providers/delete-provider.use-case';
 import { RegisterProviderUseCase } from '../../../../../core/application/use-cases/providers/register-provider.use-case';
+import { UpdateProviderUseCase } from '../../../../../core/application/use-cases/providers/update-provider.use-case';
 import { z } from 'zod';
 
 export const registerProviderSchema = z.object({
@@ -12,11 +14,22 @@ export const registerProviderSchema = z.object({
   contactPhone: z.string().optional(),
 });
 
+export const updateProviderSchema = z.object({
+  name: z.string().min(1).optional(),
+  companyRegistration: z.string().nullable().optional(),
+  contactEmail: z.string().email().nullable().optional(),
+  contactPhone: z.string().nullable().optional(),
+}).refine((value) => Object.keys(value).length > 0, {
+  message: 'At least one field is required to update provider',
+});
+
 export class ProviderController {
   constructor(
     private registerProviderUseCase: RegisterProviderUseCase,
     private findAllProvidersUseCase: FindAllProvidersUseCase,
     private findProviderByAccountIdUseCase: FindProviderByAccountIdUseCase,
+    private updateProviderUseCase: UpdateProviderUseCase,
+    private deleteProviderUseCase: DeleteProviderUseCase,
   ) { }
 
   async registerProvider(req: FastifyRequest, reply: FastifyReply) {
@@ -49,6 +62,39 @@ export class ProviderController {
       }
 
       return reply.status(200).send(provider);
+    } catch (error) {
+      if (error instanceof z.ZodError) return reply.status(400).send(error.flatten());
+      return reply.status(400).send({ message: (error as Error).message });
+    }
+  }
+
+  async updateProvider(req: FastifyRequest, reply: FastifyReply) {
+    try {
+      const params = z.object({ id: z.string().uuid() }).parse(req.params);
+      const data = updateProviderSchema.parse(req.body);
+      const provider = await this.updateProviderUseCase.execute(params.id, data);
+
+      if (!provider) {
+        return reply.status(404).send({ message: 'Provider not found' });
+      }
+
+      return reply.status(200).send(provider);
+    } catch (error) {
+      if (error instanceof z.ZodError) return reply.status(400).send(error.flatten());
+      return reply.status(400).send({ message: (error as Error).message });
+    }
+  }
+
+  async deleteProvider(req: FastifyRequest, reply: FastifyReply) {
+    try {
+      const params = z.object({ id: z.string().uuid() }).parse(req.params);
+      const deleted = await this.deleteProviderUseCase.execute(params.id);
+
+      if (!deleted) {
+        return reply.status(404).send({ message: 'Provider not found' });
+      }
+
+      return reply.status(204).send();
     } catch (error) {
       if (error instanceof z.ZodError) return reply.status(400).send(error.flatten());
       return reply.status(400).send({ message: (error as Error).message });

@@ -75,4 +75,51 @@ export class CafeteriaDrizzleRepository implements ICafeteriaRepository {
             row.createdAt ?? null
         ));
     }
+
+    async update(id: string, cafeteria: Partial<Omit<Cafeteria, "id" | "createdAt">>): Promise<Cafeteria | null> {
+        const values: Partial<{
+            schoolId: string;
+            providerId: string;
+            name: string | null;
+        }> = {
+            schoolId: cafeteria.schoolId,
+            providerId: cafeteria.providerId,
+            name: cafeteria.name,
+        };
+
+        Object.keys(values).forEach((key) => {
+            if (values[key as keyof typeof values] === undefined) {
+                delete values[key as keyof typeof values];
+            }
+        });
+
+        if (Object.keys(values).length === 0) {
+            return this.findById(id);
+        }
+
+        const [row] = await db
+            .update(cafeterias)
+            .set(values)
+            .where(eq(cafeterias.id, id))
+            .returning();
+
+        if (!row) return null;
+
+        return new Cafeteria(
+            row.id,
+            row.schoolId,
+            row.providerId,
+            row.name ?? null,
+            row.createdAt ?? null
+        );
+    }
+
+    async deleteById(id: string): Promise<boolean> {
+        const [row] = await db
+            .delete(cafeterias)
+            .where(eq(cafeterias.id, id))
+            .returning({ id: cafeterias.id });
+
+        return Boolean(row);
+    }
 }

@@ -88,4 +88,57 @@ export class ProviderDrizzleRepository implements IProviderRepository {
             row.createdAt ?? null
         ));
     }
+
+    async update(id: string, provider: Partial<Omit<Provider, "id" | "createdAt">>): Promise<Provider | null> {
+        const values: Partial<{
+            accountId: string;
+            name: string;
+            companyRegistration: string | null;
+            contactEmail: string | null;
+            contactPhone: string | null;
+        }> = {
+            accountId: provider.accountId,
+            name: provider.name,
+            companyRegistration: provider.companyRegistration,
+            contactEmail: provider.contactEmail,
+            contactPhone: provider.contactPhone,
+        };
+
+        Object.keys(values).forEach((key) => {
+            if (values[key as keyof typeof values] === undefined) {
+                delete values[key as keyof typeof values];
+            }
+        });
+
+        if (Object.keys(values).length === 0) {
+            return this.findById(id);
+        }
+
+        const [row] = await db
+            .update(providers)
+            .set(values)
+            .where(eq(providers.id, id))
+            .returning();
+
+        if (!row) return null;
+
+        return new Provider(
+            row.id,
+            row.accountId,
+            row.name,
+            row.companyRegistration ?? null,
+            row.contactEmail ?? null,
+            row.contactPhone ?? null,
+            row.createdAt ?? null
+        );
+    }
+
+    async deleteById(id: string): Promise<boolean> {
+        const [row] = await db
+            .delete(providers)
+            .where(eq(providers.id, id))
+            .returning({ id: providers.id });
+
+        return Boolean(row);
+    }
 }

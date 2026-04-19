@@ -4,4 +4,5 @@ export interface IWorkerAssignmentRepository {
   findAll(): Promise<WorkerAssignment[]>;
   findByWorkerId(workerId: string): Promise<WorkerAssignment[]>;
   findByCafeteriaId(cafeteriaId: string): Promise<WorkerAssignment[]>;
+  deleteById(id: string): Promise<boolean>;
 }

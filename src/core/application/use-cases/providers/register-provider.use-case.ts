@@ -13,10 +13,6 @@ export class RegisterProviderUseCase {
   constructor(private readonly providerRepo: IProviderRepository) {}
 
   async execute(dto: RegisterProviderDTO): Promise<Provider> {
-    const existingProvider = await this.providerRepo.findByAccountId(dto.accountId);
-    if (existingProvider) {
-      throw new Error('Provider already exists for this account');
-    }
     return this.providerRepo.create({
       accountId: dto.accountId,
       name: dto.name,

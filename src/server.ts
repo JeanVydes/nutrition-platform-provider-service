@@ -7,6 +7,7 @@ import type { FastifyInstance, FastifyRequest } from "fastify";
 import { providerRoutes } from "@/modules/providers/infrastructure/http/routes/provider.routes.js";
 import { cafeteriaRoutes } from "@/modules/cafeterias/infrastructure/http/routes/cafeteria.routes.js";
 import { workerRoutes } from "@/modules/workers/infrastructure/http/routes/worker.routes.js";
+import { schoolConfigRoutes } from "@/modules/school-configs/infrastructure/http/routes/school-config.routes.js";
 
 type AuthContext = {
     accountId: string;
@@ -161,6 +162,7 @@ export async function createApp(): Promise<FastifyInstance> {
     await app.register(providerRoutes);
     await app.register(cafeteriaRoutes);
     await app.register(workerRoutes);
+    await app.register(schoolConfigRoutes);
 
     await app.register(rateLimit, {
         global: true,

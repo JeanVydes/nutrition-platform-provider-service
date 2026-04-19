@@ -21,7 +21,7 @@
                     "",
                     "if (!pm.environment.get('BASE_URL')) pm.environment.set('BASE_URL', 'http://localhost:8080');",
                     "if (!pm.environment.get('ACCESS_TOKEN')) pm.environment.set('ACCESS_TOKEN', 'offline-token');",
-                    "if (!pm.environment.get('MISSING_UUID')) pm.environment.set('MISSING_UUID', '00000000-0000-0000-0000-000000000999');",
+                    "if (!pm.environment.get('MISSING_UUID')) pm.environment.set('MISSING_UUID', '00000000-0000-4000-8000-000000000999');",
                     "",
                     "ensureUuid('PROVIDER_ACCOUNT_ID');",
                     "ensureUuid('WORKER_ACCOUNT_ID');",
@@ -324,6 +324,270 @@
                             }
                         }
                     ]
+                },
+                {
+                    "name": "Update Provider (OK)",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{ACCESS_TOKEN}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"name\": \"Fresh Foods S.A.S Edit\",\n  \"contactPhone\": \"+573001112233\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{BASE_URL}}/providers/{{PROVIDER_ID}}",
+                            "host": [
+                                "{{BASE_URL}}"
+                            ],
+                            "path": [
+                                "providers",
+                                "{{PROVIDER_ID}}"
+                            ]
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('status 200', function () { pm.response.to.have.status(200); });"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Update Provider (Invalid UUID)",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{ACCESS_TOKEN}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"name\": \"Invalid UUID Update\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{BASE_URL}}/providers/not-a-uuid",
+                            "host": [
+                                "{{BASE_URL}}"
+                            ],
+                            "path": [
+                                "providers",
+                                "not-a-uuid"
+                            ]
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('status 400', function () { pm.response.to.have.status(400); });"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Update Provider (Not Found)",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{ACCESS_TOKEN}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"name\": \"Missing Provider Update\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{BASE_URL}}/providers/{{MISSING_UUID}}",
+                            "host": [
+                                "{{BASE_URL}}"
+                            ],
+                            "path": [
+                                "providers",
+                                "{{MISSING_UUID}}"
+                            ]
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('status 404', function () { pm.response.to.have.status(404); });"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Create Provider For Delete (OK)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{ACCESS_TOKEN}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"accountId\": \"{{$guid}}\",\n  \"name\": \"Provider Delete Candidate\",\n  \"companyRegistration\": \"NIT-DELETE-001\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{BASE_URL}}/providers",
+                            "host": [
+                                "{{BASE_URL}}"
+                            ],
+                            "path": [
+                                "providers"
+                            ]
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('status 201', function () { pm.response.to.have.status(201); });",
+                                    "const json = pm.response.json();",
+                                    "if (json?.id) pm.environment.set('DELETE_PROVIDER_ID', json.id);"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Delete Provider (OK)",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{ACCESS_TOKEN}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{BASE_URL}}/providers/{{DELETE_PROVIDER_ID}}",
+                            "host": [
+                                "{{BASE_URL}}"
+                            ],
+                            "path": [
+                                "providers",
+                                "{{DELETE_PROVIDER_ID}}"
+                            ]
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('status 204', function () { pm.response.to.have.status(204); });"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Delete Provider (Invalid UUID)",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{ACCESS_TOKEN}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{BASE_URL}}/providers/not-a-uuid",
+                            "host": [
+                                "{{BASE_URL}}"
+                            ],
+                            "path": [
+                                "providers",
+                                "not-a-uuid"
+                            ]
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('status 400', function () { pm.response.to.have.status(400); });"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Delete Provider (Not Found)",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{ACCESS_TOKEN}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{BASE_URL}}/providers/{{MISSING_UUID}}",
+                            "host": [
+                                "{{BASE_URL}}"
+                            ],
+                            "path": [
+                                "providers",
+                                "{{MISSING_UUID}}"
+                            ]
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('status 404', function () { pm.response.to.have.status(404); });"
+                                ]
+                            }
+                        }
+                    ]
                 }
             ]
         },
@@ -609,6 +873,270 @@
                                 "type": "text/javascript",
                                 "exec": [
                                     "pm.test('status 400', function () { pm.response.to.have.status(400); });"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Update Cafeteria (OK)",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{ACCESS_TOKEN}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"name\": \"Cafetería Central Edit\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{BASE_URL}}/cafeterias/{{CAFETERIA_ID}}",
+                            "host": [
+                                "{{BASE_URL}}"
+                            ],
+                            "path": [
+                                "cafeterias",
+                                "{{CAFETERIA_ID}}"
+                            ]
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('status 200', function () { pm.response.to.have.status(200); });"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Update Cafeteria (Invalid UUID)",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{ACCESS_TOKEN}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"name\": \"Invalid UUID Cafeteria\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{BASE_URL}}/cafeterias/not-a-uuid",
+                            "host": [
+                                "{{BASE_URL}}"
+                            ],
+                            "path": [
+                                "cafeterias",
+                                "not-a-uuid"
+                            ]
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('status 400', function () { pm.response.to.have.status(400); });"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Update Cafeteria (Not Found)",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{ACCESS_TOKEN}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"name\": \"Missing Cafeteria\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{BASE_URL}}/cafeterias/{{MISSING_UUID}}",
+                            "host": [
+                                "{{BASE_URL}}"
+                            ],
+                            "path": [
+                                "cafeterias",
+                                "{{MISSING_UUID}}"
+                            ]
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('status 404', function () { pm.response.to.have.status(404); });"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Create Cafeteria For Delete (OK)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{ACCESS_TOKEN}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"schoolId\": \"{{$guid}}\",\n  \"providerId\": \"{{PROVIDER_ID}}\",\n  \"name\": \"Cafeteria Delete Candidate\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{BASE_URL}}/cafeterias",
+                            "host": [
+                                "{{BASE_URL}}"
+                            ],
+                            "path": [
+                                "cafeterias"
+                            ]
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('status 201', function () { pm.response.to.have.status(201); });",
+                                    "const json = pm.response.json();",
+                                    "if (json?.id) pm.environment.set('DELETE_CAFETERIA_ID', json.id);"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Delete Cafeteria (OK)",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{ACCESS_TOKEN}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{BASE_URL}}/cafeterias/{{DELETE_CAFETERIA_ID}}",
+                            "host": [
+                                "{{BASE_URL}}"
+                            ],
+                            "path": [
+                                "cafeterias",
+                                "{{DELETE_CAFETERIA_ID}}"
+                            ]
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('status 204', function () { pm.response.to.have.status(204); });"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Delete Cafeteria (Invalid UUID)",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{ACCESS_TOKEN}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{BASE_URL}}/cafeterias/not-a-uuid",
+                            "host": [
+                                "{{BASE_URL}}"
+                            ],
+                            "path": [
+                                "cafeterias",
+                                "not-a-uuid"
+                            ]
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('status 400', function () { pm.response.to.have.status(400); });"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Delete Cafeteria (Not Found)",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{ACCESS_TOKEN}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{BASE_URL}}/cafeterias/{{MISSING_UUID}}",
+                            "host": [
+                                "{{BASE_URL}}"
+                            ],
+                            "path": [
+                                "cafeterias",
+                                "{{MISSING_UUID}}"
+                            ]
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('status 404', function () { pm.response.to.have.status(404); });"
                                 ]
                             }
                         }
@@ -1004,6 +1532,270 @@
                             }
                         }
                     ]
+                },
+                {
+                    "name": "Update Worker (OK)",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{ACCESS_TOKEN}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"position\": \"Cocinero Senior\",\n  \"salary\": \"2200000.00\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{BASE_URL}}/workers/{{WORKER_ID}}",
+                            "host": [
+                                "{{BASE_URL}}"
+                            ],
+                            "path": [
+                                "workers",
+                                "{{WORKER_ID}}"
+                            ]
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('status 200', function () { pm.response.to.have.status(200); });"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Update Worker (Invalid UUID)",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{ACCESS_TOKEN}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"position\": \"Invalid UUID Worker\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{BASE_URL}}/workers/not-a-uuid",
+                            "host": [
+                                "{{BASE_URL}}"
+                            ],
+                            "path": [
+                                "workers",
+                                "not-a-uuid"
+                            ]
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('status 400', function () { pm.response.to.have.status(400); });"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Update Worker (Not Found)",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{ACCESS_TOKEN}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"position\": \"Missing Worker\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{BASE_URL}}/workers/{{MISSING_UUID}}",
+                            "host": [
+                                "{{BASE_URL}}"
+                            ],
+                            "path": [
+                                "workers",
+                                "{{MISSING_UUID}}"
+                            ]
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('status 404', function () { pm.response.to.have.status(404); });"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Create Worker For Delete (OK)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{ACCESS_TOKEN}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"accountId\": \"{{$guid}}\",\n  \"providerId\": \"{{PROVIDER_ID}}\",\n  \"position\": \"Worker Delete Candidate\",\n  \"contractType\": \"fijo\",\n  \"hireDate\": \"2026-01-20\",\n  \"salary\": \"1700000.00\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{BASE_URL}}/workers",
+                            "host": [
+                                "{{BASE_URL}}"
+                            ],
+                            "path": [
+                                "workers"
+                            ]
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('status 201', function () { pm.response.to.have.status(201); });",
+                                    "const json = pm.response.json();",
+                                    "if (json?.id) pm.environment.set('DELETE_WORKER_ID', json.id);"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Delete Worker (OK)",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{ACCESS_TOKEN}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{BASE_URL}}/workers/{{DELETE_WORKER_ID}}",
+                            "host": [
+                                "{{BASE_URL}}"
+                            ],
+                            "path": [
+                                "workers",
+                                "{{DELETE_WORKER_ID}}"
+                            ]
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('status 204', function () { pm.response.to.have.status(204); });"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Delete Worker (Invalid UUID)",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{ACCESS_TOKEN}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{BASE_URL}}/workers/not-a-uuid",
+                            "host": [
+                                "{{BASE_URL}}"
+                            ],
+                            "path": [
+                                "workers",
+                                "not-a-uuid"
+                            ]
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('status 400', function () { pm.response.to.have.status(400); });"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Delete Worker (Not Found)",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{ACCESS_TOKEN}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{BASE_URL}}/workers/{{MISSING_UUID}}",
+                            "host": [
+                                "{{BASE_URL}}"
+                            ],
+                            "path": [
+                                "workers",
+                                "{{MISSING_UUID}}"
+                            ]
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('status 404', function () { pm.response.to.have.status(404); });"
+                                ]
+                            }
+                        }
+                    ]
                 }
             ]
         },
@@ -1266,6 +2058,148 @@
                             }
                         }
                     ]
+                },
+                {
+                    "name": "Delete Assignment (OK)",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{ACCESS_TOKEN}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{BASE_URL}}/workers/assignments/{{ASSIGNMENT_ID}}",
+                            "host": [
+                                "{{BASE_URL}}"
+                            ],
+                            "path": [
+                                "workers",
+                                "assignments",
+                                "{{ASSIGNMENT_ID}}"
+                            ]
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('status 204', function () { pm.response.to.have.status(204); });"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Delete Assignment (Invalid UUID)",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{ACCESS_TOKEN}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{BASE_URL}}/workers/assignments/not-a-uuid",
+                            "host": [
+                                "{{BASE_URL}}"
+                            ],
+                            "path": [
+                                "workers",
+                                "assignments",
+                                "not-a-uuid"
+                            ]
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('status 400', function () { pm.response.to.have.status(400); });"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Delete Assignment (Not Found)",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{ACCESS_TOKEN}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{BASE_URL}}/workers/assignments/{{MISSING_UUID}}",
+                            "host": [
+                                "{{BASE_URL}}"
+                            ],
+                            "path": [
+                                "workers",
+                                "assignments",
+                                "{{MISSING_UUID}}"
+                            ]
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('status 404', function () { pm.response.to.have.status(404); });"
+                                ]
+                            }
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "School Configs",
+            "item": [
+                {
+                    "name": "Get School IDs (All)",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{ACCESS_TOKEN}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{BASE_URL}}/school-configs/school-ids",
+                            "host": [
+                                "{{BASE_URL}}"
+                            ],
+                            "path": [
+                                "school-configs",
+                                "school-ids"
+                            ]
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('status 200', function () { pm.response.to.have.status(200); });",
+                                    "const json = pm.response.json();",
+                                    "pm.test('is array', function () { pm.expect(Array.isArray(json)).to.eql(true); });"
+                                ]
+                            }
+                        }
+                    ]
                 }
             ]
         }
@@ -1293,7 +2227,7 @@
         },
         {
             "key": "MISSING_UUID",
-            "value": "00000000-0000-0000-0000-000000000999"
+            "value": "00000000-0000-4000-8000-000000000999"
         },
         {
             "key": "PROVIDER_ID",
@@ -1309,6 +2243,18 @@
         },
         {
             "key": "ASSIGNMENT_ID",
+            "value": ""
+        },
+        {
+            "key": "DELETE_PROVIDER_ID",
+            "value": ""
+        },
+        {
+            "key": "DELETE_CAFETERIA_ID",
+            "value": ""
+        },
+        {
+            "key": "DELETE_WORKER_ID",
             "value": ""
         }
     ]

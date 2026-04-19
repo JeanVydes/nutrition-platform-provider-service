@@ -78,4 +78,13 @@ export class WorkerAssignmentDrizzleRepository implements IWorkerAssignmentRepos
             row.endDate ?? null
         ));
     }
+
+    async deleteById(id: string): Promise<boolean> {
+        const [row] = await db
+            .delete(workerAssignments)
+            .where(eq(workerAssignments.id, id))
+            .returning({ id: workerAssignments.id });
+
+        return Boolean(row);
+    }
 }

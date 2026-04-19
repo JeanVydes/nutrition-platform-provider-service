@@ -43,6 +43,11 @@ RATE_LIMIT_TIME_WINDOW=1 minute
 SECURITY_SERVICE_URL=http://localhost:4000
 SECURITY_INTROSPECTION_PATH=/auth/introspect
 
+# Worker account validation against security service
+SECURITY_ACCOUNT_CHECK_PATH_TEMPLATE=/accounts/:accountId
+SECURITY_ACCOUNT_CHECK_METHOD=GET
+SECURITY_SERVICE_TOKEN=
+
 # Offline mock mode (bypass security microservice)
 OFFLINE=false
 OFFLINE_ACCOUNT_ID=mock-account-id
@@ -55,6 +60,7 @@ OFFLINE_SCOPES=*
 - This service does not handle login or password flows.
 - It expects `Authorization: Bearer <token>` on protected endpoints.
 - Each request token is validated against the external security service (`SECURITY_SERVICE_URL + SECURITY_INTROSPECTION_PATH`).
+- On `POST /workers`, the service validates that `accountId` exists in the security service using `SECURITY_ACCOUNT_CHECK_PATH_TEMPLATE`.
 - `GET /health` is public (no auth, no rate limit).
 - If the token is missing/invalid/rejected, the API responds with `401 Unauthorized`.
 
@@ -62,6 +68,7 @@ OFFLINE_SCOPES=*
 
 - Set `OFFLINE=true` to run this service without the security microservice.
 - In this mode, auth introspection is bypassed and a mock auth context is injected on each protected request.
+- In this mode, worker account validation against security service is also bypassed.
 - Optional mock identity config:
   - `OFFLINE_ACCOUNT_ID`
   - `OFFLINE_ROLES` (comma-separated)
@@ -134,6 +141,8 @@ All protected endpoints require `Authorization: Bearer <token>` unless using `OF
 - `POST /providers`
 - `GET /providers`
 - `GET /providers/account/:accountId`
+- `PATCH /providers/:id`
+- `DELETE /providers/:id`
 
 ### cafeterias
 
@@ -141,6 +150,8 @@ All protected endpoints require `Authorization: Bearer <token>` unless using `OF
 - `GET /cafeterias`
 - `GET /cafeterias/:id`
 - `GET /cafeterias/provider/:providerId`
+- `PATCH /cafeterias/:id`
+- `DELETE /cafeterias/:id`
 
 ### workers
 
@@ -149,6 +160,8 @@ All protected endpoints require `Authorization: Bearer <token>` unless using `OF
 - `GET /workers/:id`
 - `GET /workers/provider/:providerId`
 - `GET /workers/account/:accountId`
+- `PATCH /workers/:id`
+- `DELETE /workers/:id`
 
 ### assignments
 
@@ -156,6 +169,11 @@ All protected endpoints require `Authorization: Bearer <token>` unless using `OF
 - `GET /workers/assignments`
 - `GET /workers/assignments/worker/:workerId`
 - `GET /workers/assignments/cafeteria/:cafeteriaId`
+- `DELETE /workers/assignments/:id`
+
+### school configs
+
+- `GET /school-configs/school-ids` (returns only `idColegio[]`)
 
 ## postman scenarios included
 
@@ -163,7 +181,10 @@ All protected endpoints require `Authorization: Bearer <token>` unless using `OF
 - Environment file: [postman/provider-service.local.postman_environment.json](postman/provider-service.local.postman_environment.json)
 - Coverage includes:
   - Happy path create/list/detail/filter requests.
+  - Happy path update requests for provider, cafeteria, and worker.
+  - Happy path delete requests for provider, cafeteria, worker, and assignment.
   - Validation scenarios (`400`) with invalid UUIDs.
+  - Validation scenarios (`400`) for malformed update/delete params.
   - Not found scenarios (`404`) with `MISSING_UUID`.
   - Auto-save IDs (`PROVIDER_ID`, `CAFETERIA_ID`, `WORKER_ID`, `ASSIGNMENT_ID`) for chained requests.
   - Pre-request auto-fix for missing/invalid UUID environment variables.
@@ -174,9 +195,18 @@ All protected endpoints require `Authorization: Bearer <token>` unless using `OF
 2. Create cafeteria (`POST /cafeterias`) with `providerId`.
 3. Create worker (`POST /workers`) with `providerId`.
 4. Assign worker (`POST /workers/assignments`) with `workerId` and `cafeteriaId`.
-5. Build listing screens with:
+5. Edit existing records when needed with:
+  - `PATCH /providers/:id`
+  - `PATCH /cafeterias/:id`
+  - `PATCH /workers/:id`
+6. Delete records when needed with:
+  - `DELETE /workers/assignments/:id` (recommended first)
+  - `DELETE /workers/:id`
+  - `DELETE /cafeterias/:id`
+  - `DELETE /providers/:id`
+7. Build listing screens with:
    - `GET /providers`, `GET /cafeterias`, `GET /workers`, `GET /workers/assignments`.
-6. Build detail/filter views with:
+8. Build detail/filter views with:
    - `GET /providers/account/:accountId`
    - `GET /cafeterias/:id`, `GET /cafeterias/provider/:providerId`
    - `GET /workers/:id`, `GET /workers/provider/:providerId`, `GET /workers/account/:accountId`

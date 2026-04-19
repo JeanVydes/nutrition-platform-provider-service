@@ -4,4 +4,6 @@ export interface IProviderRepository {
   findById(id: string): Promise<Provider | null>;
   findByAccountId(accountId: string): Promise<Provider | null>;
   findAll(): Promise<Provider[]>;
+  update(id: string, provider: Partial<Omit<Provider, 'id' | 'createdAt'>>): Promise<Provider | null>;
+  deleteById(id: string): Promise<boolean>;
 }

@@ -1,6 +1,7 @@
 import type { IWorkerRepository } from '../../../domain/repositories/worker.repository';
 import type { IProviderRepository } from '../../../domain/repositories/provider.repository';
 import type { Worker } from '../../../domain/entities/worker.entity';
+import type { IAccountValidationService } from '../../../domain/services/account-validation.service';
 
 interface RegisterWorkerDTO {
   accountId: string;
@@ -14,12 +15,16 @@ interface RegisterWorkerDTO {
 export class RegisterWorkerUseCase {
   constructor(
     private readonly workerRepo: IWorkerRepository,
-    private readonly providerRepo: IProviderRepository
+    private readonly providerRepo: IProviderRepository,
+    private readonly accountValidationService: IAccountValidationService,
   ) {}
 
   async execute(dto: RegisterWorkerDTO): Promise<Worker> {
     const provider = await this.providerRepo.findById(dto.providerId);
     if (!provider) throw new Error('Provider not found');
+
+    await this.accountValidationService.ensureAccountExists(dto.accountId);
+
     return this.workerRepo.create({
       accountId: dto.accountId,
       providerId: dto.providerId,
