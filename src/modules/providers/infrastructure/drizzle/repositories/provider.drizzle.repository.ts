@@ -72,4 +72,20 @@ export class ProviderDrizzleRepository implements IProviderRepository {
             row.createdAt ?? null
         );
     }
+
+    async findAll(): Promise<Provider[]> {
+        const rows = await db
+            .select()
+            .from(providers);
+
+        return rows.map((row) => new Provider(
+            row.id,
+            row.accountId,
+            row.name,
+            row.companyRegistration ?? null,
+            row.contactEmail ?? null,
+            row.contactPhone ?? null,
+            row.createdAt ?? null
+        ));
+    }
 }

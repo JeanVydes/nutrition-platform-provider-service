@@ -57,4 +57,63 @@ export class WorkerDrizzleRepository implements IWorkerRepository {
             row.createdAt ?? null
         );
     }
+
+    async findAll(): Promise<Worker[]> {
+        const rows = await db
+            .select()
+            .from(workers);
+
+        return rows.map((row) => new Worker(
+            row.id,
+            row.accountId,
+            row.providerId,
+            row.employmentStatus ?? null,
+            row.position ?? null,
+            row.contractType ?? null,
+            row.hireDate ?? null,
+            row.salary ?? null,
+            row.createdAt ?? null
+        ));
+    }
+
+    async findByProviderId(providerId: string): Promise<Worker[]> {
+        const rows = await db
+            .select()
+            .from(workers)
+            .where(eq(workers.providerId, providerId));
+
+        return rows.map((row) => new Worker(
+            row.id,
+            row.accountId,
+            row.providerId,
+            row.employmentStatus ?? null,
+            row.position ?? null,
+            row.contractType ?? null,
+            row.hireDate ?? null,
+            row.salary ?? null,
+            row.createdAt ?? null
+        ));
+    }
+
+    async findByAccountId(accountId: string): Promise<Worker | null> {
+        const [row] = await db
+            .select()
+            .from(workers)
+            .where(eq(workers.accountId, accountId))
+            .limit(1);
+
+        if (!row) return null;
+
+        return new Worker(
+            row.id,
+            row.accountId,
+            row.providerId,
+            row.employmentStatus ?? null,
+            row.position ?? null,
+            row.contractType ?? null,
+            row.hireDate ?? null,
+            row.salary ?? null,
+            row.createdAt ?? null
+        );
+    }
 }

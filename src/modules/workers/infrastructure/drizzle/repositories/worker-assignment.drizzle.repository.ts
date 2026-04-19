@@ -1,3 +1,5 @@
+import { eq } from "drizzle-orm";
+
 import { WorkerAssignment } from "@/core/domain/entities/worker-assignment.entity.js";
 import type { IWorkerAssignmentRepository } from "@/core/domain/repositories/worker-assignment.repository.js";
 import { db } from "@/shared/database/connection.js";
@@ -28,5 +30,52 @@ export class WorkerAssignmentDrizzleRepository implements IWorkerAssignmentRepos
             row.startDate ?? null,
             row.endDate ?? null
         );
+    }
+
+    async findAll(): Promise<WorkerAssignment[]> {
+        const rows = await db
+            .select()
+            .from(workerAssignments);
+
+        return rows.map((row) => new WorkerAssignment(
+            row.id,
+            row.workerId,
+            row.cafeteriaId,
+            row.role ?? null,
+            row.startDate ?? null,
+            row.endDate ?? null
+        ));
+    }
+
+    async findByWorkerId(workerId: string): Promise<WorkerAssignment[]> {
+        const rows = await db
+            .select()
+            .from(workerAssignments)
+            .where(eq(workerAssignments.workerId, workerId));
+
+        return rows.map((row) => new WorkerAssignment(
+            row.id,
+            row.workerId,
+            row.cafeteriaId,
+            row.role ?? null,
+            row.startDate ?? null,
+            row.endDate ?? null
+        ));
+    }
+
+    async findByCafeteriaId(cafeteriaId: string): Promise<WorkerAssignment[]> {
+        const rows = await db
+            .select()
+            .from(workerAssignments)
+            .where(eq(workerAssignments.cafeteriaId, cafeteriaId));
+
+        return rows.map((row) => new WorkerAssignment(
+            row.id,
+            row.workerId,
+            row.cafeteriaId,
+            row.role ?? null,
+            row.startDate ?? null,
+            row.endDate ?? null
+        ));
     }
 }

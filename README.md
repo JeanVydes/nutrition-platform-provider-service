@@ -125,6 +125,63 @@ docker run --name location-service \
   - Run behind reverse proxy/API gateway
   - Centralize logs and monitor 401/429 rates
 
+## api endpoints (for frontend)
+
+All protected endpoints require `Authorization: Bearer <token>` unless using `OFFLINE=true` in local development.
+
+### providers
+
+- `POST /providers`
+- `GET /providers`
+- `GET /providers/account/:accountId`
+
+### cafeterias
+
+- `POST /cafeterias`
+- `GET /cafeterias`
+- `GET /cafeterias/:id`
+- `GET /cafeterias/provider/:providerId`
+
+### workers
+
+- `POST /workers`
+- `GET /workers`
+- `GET /workers/:id`
+- `GET /workers/provider/:providerId`
+- `GET /workers/account/:accountId`
+
+### assignments
+
+- `POST /workers/assignments`
+- `GET /workers/assignments`
+- `GET /workers/assignments/worker/:workerId`
+- `GET /workers/assignments/cafeteria/:cafeteriaId`
+
+## postman scenarios included
+
+- Collection file: [postman/provider-service.postman_collection.json](postman/provider-service.postman_collection.json)
+- Environment file: [postman/provider-service.local.postman_environment.json](postman/provider-service.local.postman_environment.json)
+- Coverage includes:
+  - Happy path create/list/detail/filter requests.
+  - Validation scenarios (`400`) with invalid UUIDs.
+  - Not found scenarios (`404`) with `MISSING_UUID`.
+  - Auto-save IDs (`PROVIDER_ID`, `CAFETERIA_ID`, `WORKER_ID`, `ASSIGNMENT_ID`) for chained requests.
+  - Pre-request auto-fix for missing/invalid UUID environment variables.
+
+## frontend integration flow (recommended)
+
+1. Create provider (`POST /providers`) and store `provider.id`.
+2. Create cafeteria (`POST /cafeterias`) with `providerId`.
+3. Create worker (`POST /workers`) with `providerId`.
+4. Assign worker (`POST /workers/assignments`) with `workerId` and `cafeteriaId`.
+5. Build listing screens with:
+   - `GET /providers`, `GET /cafeterias`, `GET /workers`, `GET /workers/assignments`.
+6. Build detail/filter views with:
+   - `GET /providers/account/:accountId`
+   - `GET /cafeterias/:id`, `GET /cafeterias/provider/:providerId`
+   - `GET /workers/:id`, `GET /workers/provider/:providerId`, `GET /workers/account/:accountId`
+   - `GET /workers/assignments/worker/:workerId`, `GET /workers/assignments/cafeteria/:cafeteriaId`
+
 ## authors
 
 - Jean Vydes - [GitHub](github.com/jeanvydes) - [Mail](mailto:jcvides@unimagdalena.edu.co)

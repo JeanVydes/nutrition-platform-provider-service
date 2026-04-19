@@ -46,4 +46,33 @@ export class CafeteriaDrizzleRepository implements ICafeteriaRepository {
             row.createdAt ?? null
         );
     }
+
+    async findAll(): Promise<Cafeteria[]> {
+        const rows = await db
+            .select()
+            .from(cafeterias);
+
+        return rows.map((row) => new Cafeteria(
+            row.id,
+            row.schoolId,
+            row.providerId,
+            row.name ?? null,
+            row.createdAt ?? null
+        ));
+    }
+
+    async findByProviderId(providerId: string): Promise<Cafeteria[]> {
+        const rows = await db
+            .select()
+            .from(cafeterias)
+            .where(eq(cafeterias.providerId, providerId));
+
+        return rows.map((row) => new Cafeteria(
+            row.id,
+            row.schoolId,
+            row.providerId,
+            row.name ?? null,
+            row.createdAt ?? null
+        ));
+    }
 }

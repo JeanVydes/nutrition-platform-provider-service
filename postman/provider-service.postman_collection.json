@@ -15,18 +15,13 @@
                     "function ensureUuid(varName) {",
                     "  const current = pm.environment.get(varName);",
                     "  if (!current || !uuidRegex.test(current)) {",
-                    "    const generated = pm.variables.replaceIn('{{$guid}}');",
-                    "    pm.environment.set(varName, generated);",
+                    "    pm.environment.set(varName, pm.variables.replaceIn('{{$guid}}'));",
                     "  }",
                     "}",
                     "",
-                    "if (!pm.environment.get('BASE_URL')) {",
-                    "  pm.environment.set('BASE_URL', 'http://localhost:8080');",
-                    "}",
-                    "",
-                    "if (!pm.environment.get('ACCESS_TOKEN')) {",
-                    "  pm.environment.set('ACCESS_TOKEN', 'offline-token');",
-                    "}",
+                    "if (!pm.environment.get('BASE_URL')) pm.environment.set('BASE_URL', 'http://localhost:8080');",
+                    "if (!pm.environment.get('ACCESS_TOKEN')) pm.environment.set('ACCESS_TOKEN', 'offline-token');",
+                    "if (!pm.environment.get('MISSING_UUID')) pm.environment.set('MISSING_UUID', '00000000-0000-0000-0000-000000000999');",
                     "",
                     "ensureUuid('PROVIDER_ACCOUNT_ID');",
                     "ensureUuid('WORKER_ACCOUNT_ID');",
@@ -58,12 +53,10 @@
                         {
                             "listen": "test",
                             "script": {
+                                "type": "text/javascript",
                                 "exec": [
-                                    "pm.test('status 200', function () {",
-                                    "  pm.response.to.have.status(200);",
-                                    "});"
-                                ],
-                                "type": "text/javascript"
+                                    "pm.test('status 200', function () { pm.response.to.have.status(200); });"
+                                ]
                             }
                         }
                     ]
@@ -105,16 +98,12 @@
                         {
                             "listen": "test",
                             "script": {
+                                "type": "text/javascript",
                                 "exec": [
-                                    "pm.test('status 201', function () {",
-                                    "  pm.response.to.have.status(201);",
-                                    "});",
+                                    "pm.test('status 201', function () { pm.response.to.have.status(201); });",
                                     "const json = pm.response.json();",
-                                    "if (json && json.id) {",
-                                    "  pm.environment.set('PROVIDER_ID', json.id);",
-                                    "}"
-                                ],
-                                "type": "text/javascript"
+                                    "if (json?.id) pm.environment.set('PROVIDER_ID', json.id);"
+                                ]
                             }
                         }
                     ]
@@ -151,12 +140,10 @@
                         {
                             "listen": "test",
                             "script": {
+                                "type": "text/javascript",
                                 "exec": [
-                                    "pm.test('status is 4xx for duplicate', function () {",
-                                    "  pm.expect(pm.response.code).to.be.oneOf([400, 409]);",
-                                    "});"
-                                ],
-                                "type": "text/javascript"
+                                    "pm.test('status is 4xx for duplicate', function () { pm.expect(pm.response.code).to.be.oneOf([400, 409]); });"
+                                ]
                             }
                         }
                     ]
@@ -193,12 +180,147 @@
                         {
                             "listen": "test",
                             "script": {
+                                "type": "text/javascript",
                                 "exec": [
-                                    "pm.test('status 400 validation', function () {",
-                                    "  pm.response.to.have.status(400);",
-                                    "});"
-                                ],
-                                "type": "text/javascript"
+                                    "pm.test('status 400 validation', function () { pm.response.to.have.status(400); });"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Get Providers (All)",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{ACCESS_TOKEN}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{BASE_URL}}/providers",
+                            "host": [
+                                "{{BASE_URL}}"
+                            ],
+                            "path": [
+                                "providers"
+                            ]
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('status 200', function () { pm.response.to.have.status(200); });",
+                                    "const json = pm.response.json();",
+                                    "pm.test('is array', function () { pm.expect(Array.isArray(json)).to.eql(true); });",
+                                    "if (Array.isArray(json) && json[0]?.id) pm.environment.set('PROVIDER_ID', json[0].id);"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Get Provider by AccountId (OK)",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{ACCESS_TOKEN}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{BASE_URL}}/providers/account/{{PROVIDER_ACCOUNT_ID}}",
+                            "host": [
+                                "{{BASE_URL}}"
+                            ],
+                            "path": [
+                                "providers",
+                                "account",
+                                "{{PROVIDER_ACCOUNT_ID}}"
+                            ]
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('status 200', function () { pm.response.to.have.status(200); });"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Get Provider by AccountId (Invalid UUID)",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{ACCESS_TOKEN}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{BASE_URL}}/providers/account/not-a-uuid",
+                            "host": [
+                                "{{BASE_URL}}"
+                            ],
+                            "path": [
+                                "providers",
+                                "account",
+                                "not-a-uuid"
+                            ]
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('status 400', function () { pm.response.to.have.status(400); });"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Get Provider by AccountId (Not Found)",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{ACCESS_TOKEN}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{BASE_URL}}/providers/account/{{MISSING_UUID}}",
+                            "host": [
+                                "{{BASE_URL}}"
+                            ],
+                            "path": [
+                                "providers",
+                                "account",
+                                "{{MISSING_UUID}}"
+                            ]
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('status 404', function () { pm.response.to.have.status(404); });"
+                                ]
                             }
                         }
                     ]
@@ -240,16 +362,12 @@
                         {
                             "listen": "test",
                             "script": {
+                                "type": "text/javascript",
                                 "exec": [
-                                    "pm.test('status 201', function () {",
-                                    "  pm.response.to.have.status(201);",
-                                    "});",
+                                    "pm.test('status 201', function () { pm.response.to.have.status(201); });",
                                     "const json = pm.response.json();",
-                                    "if (json && json.id) {",
-                                    "  pm.environment.set('CAFETERIA_ID', json.id);",
-                                    "}"
-                                ],
-                                "type": "text/javascript"
+                                    "if (json?.id) pm.environment.set('CAFETERIA_ID', json.id);"
+                                ]
                             }
                         }
                     ]
@@ -270,7 +388,7 @@
                         ],
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n  \"schoolId\": \"{{SCHOOL_ID}}\",\n  \"providerId\": \"00000000-0000-0000-0000-000000000999\",\n  \"name\": \"Cafetería Fallback\"\n}"
+                            "raw": "{\n  \"schoolId\": \"{{SCHOOL_ID}}\",\n  \"providerId\": \"{{MISSING_UUID}}\",\n  \"name\": \"Cafetería Fallback\"\n}"
                         },
                         "url": {
                             "raw": "{{BASE_URL}}/cafeterias",
@@ -286,12 +404,212 @@
                         {
                             "listen": "test",
                             "script": {
+                                "type": "text/javascript",
                                 "exec": [
-                                    "pm.test('status 4xx when provider missing', function () {",
-                                    "  pm.expect(pm.response.code).to.be.oneOf([400, 404]);",
-                                    "});"
-                                ],
-                                "type": "text/javascript"
+                                    "pm.test('status 4xx when provider missing', function () { pm.expect(pm.response.code).to.be.oneOf([400, 404]); });"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Get Cafeterias (All)",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{ACCESS_TOKEN}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{BASE_URL}}/cafeterias",
+                            "host": [
+                                "{{BASE_URL}}"
+                            ],
+                            "path": [
+                                "cafeterias"
+                            ]
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('status 200', function () { pm.response.to.have.status(200); });",
+                                    "const json = pm.response.json();",
+                                    "pm.test('is array', function () { pm.expect(Array.isArray(json)).to.eql(true); });",
+                                    "if (Array.isArray(json) && json[0]?.id) pm.environment.set('CAFETERIA_ID', json[0].id);"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Get Cafeteria by Id (OK)",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{ACCESS_TOKEN}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{BASE_URL}}/cafeterias/{{CAFETERIA_ID}}",
+                            "host": [
+                                "{{BASE_URL}}"
+                            ],
+                            "path": [
+                                "cafeterias",
+                                "{{CAFETERIA_ID}}"
+                            ]
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('status 200', function () { pm.response.to.have.status(200); });"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Get Cafeteria by Id (Invalid UUID)",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{ACCESS_TOKEN}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{BASE_URL}}/cafeterias/not-a-uuid",
+                            "host": [
+                                "{{BASE_URL}}"
+                            ],
+                            "path": [
+                                "cafeterias",
+                                "not-a-uuid"
+                            ]
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('status 400', function () { pm.response.to.have.status(400); });"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Get Cafeteria by Id (Not Found)",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{ACCESS_TOKEN}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{BASE_URL}}/cafeterias/{{MISSING_UUID}}",
+                            "host": [
+                                "{{BASE_URL}}"
+                            ],
+                            "path": [
+                                "cafeterias",
+                                "{{MISSING_UUID}}"
+                            ]
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('status 404', function () { pm.response.to.have.status(404); });"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Get Cafeterias by ProviderId (OK)",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{ACCESS_TOKEN}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{BASE_URL}}/cafeterias/provider/{{PROVIDER_ID}}",
+                            "host": [
+                                "{{BASE_URL}}"
+                            ],
+                            "path": [
+                                "cafeterias",
+                                "provider",
+                                "{{PROVIDER_ID}}"
+                            ]
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('status 200', function () { pm.response.to.have.status(200); });"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Get Cafeterias by ProviderId (Invalid UUID)",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{ACCESS_TOKEN}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{BASE_URL}}/cafeterias/provider/not-a-uuid",
+                            "host": [
+                                "{{BASE_URL}}"
+                            ],
+                            "path": [
+                                "cafeterias",
+                                "provider",
+                                "not-a-uuid"
+                            ]
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('status 400', function () { pm.response.to.have.status(400); });"
+                                ]
                             }
                         }
                     ]
@@ -333,16 +651,12 @@
                         {
                             "listen": "test",
                             "script": {
+                                "type": "text/javascript",
                                 "exec": [
-                                    "pm.test('status 201', function () {",
-                                    "  pm.response.to.have.status(201);",
-                                    "});",
+                                    "pm.test('status 201', function () { pm.response.to.have.status(201); });",
                                     "const json = pm.response.json();",
-                                    "if (json && json.id) {",
-                                    "  pm.environment.set('WORKER_ID', json.id);",
-                                    "}"
-                                ],
-                                "type": "text/javascript"
+                                    "if (json?.id) pm.environment.set('WORKER_ID', json.id);"
+                                ]
                             }
                         }
                     ]
@@ -363,7 +677,7 @@
                         ],
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n  \"accountId\": \"11111111-1111-1111-1111-111111111111\",\n  \"providerId\": \"00000000-0000-0000-0000-000000000999\",\n  \"position\": \"Auxiliar\"\n}"
+                            "raw": "{\n  \"accountId\": \"{{$guid}}\",\n  \"providerId\": \"{{MISSING_UUID}}\",\n  \"position\": \"Auxiliar\"\n}"
                         },
                         "url": {
                             "raw": "{{BASE_URL}}/workers",
@@ -379,12 +693,314 @@
                         {
                             "listen": "test",
                             "script": {
+                                "type": "text/javascript",
                                 "exec": [
-                                    "pm.test('status 4xx when provider missing', function () {",
-                                    "  pm.expect(pm.response.code).to.be.oneOf([400, 404]);",
-                                    "});"
-                                ],
-                                "type": "text/javascript"
+                                    "pm.test('status 4xx when provider missing', function () { pm.expect(pm.response.code).to.be.oneOf([400, 404]); });"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Get Workers (All)",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{ACCESS_TOKEN}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{BASE_URL}}/workers",
+                            "host": [
+                                "{{BASE_URL}}"
+                            ],
+                            "path": [
+                                "workers"
+                            ]
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('status 200', function () { pm.response.to.have.status(200); });",
+                                    "const json = pm.response.json();",
+                                    "pm.test('is array', function () { pm.expect(Array.isArray(json)).to.eql(true); });",
+                                    "if (Array.isArray(json) && json[0]?.id) pm.environment.set('WORKER_ID', json[0].id);"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Get Worker by Id (OK)",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{ACCESS_TOKEN}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{BASE_URL}}/workers/{{WORKER_ID}}",
+                            "host": [
+                                "{{BASE_URL}}"
+                            ],
+                            "path": [
+                                "workers",
+                                "{{WORKER_ID}}"
+                            ]
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('status 200', function () { pm.response.to.have.status(200); });"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Get Worker by Id (Invalid UUID)",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{ACCESS_TOKEN}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{BASE_URL}}/workers/not-a-uuid",
+                            "host": [
+                                "{{BASE_URL}}"
+                            ],
+                            "path": [
+                                "workers",
+                                "not-a-uuid"
+                            ]
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('status 400', function () { pm.response.to.have.status(400); });"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Get Worker by Id (Not Found)",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{ACCESS_TOKEN}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{BASE_URL}}/workers/{{MISSING_UUID}}",
+                            "host": [
+                                "{{BASE_URL}}"
+                            ],
+                            "path": [
+                                "workers",
+                                "{{MISSING_UUID}}"
+                            ]
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('status 404', function () { pm.response.to.have.status(404); });"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Get Workers by ProviderId (OK)",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{ACCESS_TOKEN}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{BASE_URL}}/workers/provider/{{PROVIDER_ID}}",
+                            "host": [
+                                "{{BASE_URL}}"
+                            ],
+                            "path": [
+                                "workers",
+                                "provider",
+                                "{{PROVIDER_ID}}"
+                            ]
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('status 200', function () { pm.response.to.have.status(200); });"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Get Workers by ProviderId (Invalid UUID)",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{ACCESS_TOKEN}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{BASE_URL}}/workers/provider/not-a-uuid",
+                            "host": [
+                                "{{BASE_URL}}"
+                            ],
+                            "path": [
+                                "workers",
+                                "provider",
+                                "not-a-uuid"
+                            ]
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('status 400', function () { pm.response.to.have.status(400); });"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Get Worker by AccountId (OK)",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{ACCESS_TOKEN}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{BASE_URL}}/workers/account/{{WORKER_ACCOUNT_ID}}",
+                            "host": [
+                                "{{BASE_URL}}"
+                            ],
+                            "path": [
+                                "workers",
+                                "account",
+                                "{{WORKER_ACCOUNT_ID}}"
+                            ]
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('status 200', function () { pm.response.to.have.status(200); });"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Get Worker by AccountId (Invalid UUID)",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{ACCESS_TOKEN}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{BASE_URL}}/workers/account/not-a-uuid",
+                            "host": [
+                                "{{BASE_URL}}"
+                            ],
+                            "path": [
+                                "workers",
+                                "account",
+                                "not-a-uuid"
+                            ]
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('status 400', function () { pm.response.to.have.status(400); });"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Get Worker by AccountId (Not Found)",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{ACCESS_TOKEN}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{BASE_URL}}/workers/account/{{MISSING_UUID}}",
+                            "host": [
+                                "{{BASE_URL}}"
+                            ],
+                            "path": [
+                                "workers",
+                                "account",
+                                "{{MISSING_UUID}}"
+                            ]
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('status 404', function () { pm.response.to.have.status(404); });"
+                                ]
                             }
                         }
                     ]
@@ -427,16 +1043,12 @@
                         {
                             "listen": "test",
                             "script": {
+                                "type": "text/javascript",
                                 "exec": [
-                                    "pm.test('status 201', function () {",
-                                    "  pm.response.to.have.status(201);",
-                                    "});",
+                                    "pm.test('status 201', function () { pm.response.to.have.status(201); });",
                                     "const json = pm.response.json();",
-                                    "if (json && json.id) {",
-                                    "  pm.environment.set('ASSIGNMENT_ID', json.id);",
-                                    "}"
-                                ],
-                                "type": "text/javascript"
+                                    "if (json?.id) pm.environment.set('ASSIGNMENT_ID', json.id);"
+                                ]
                             }
                         }
                     ]
@@ -457,7 +1069,7 @@
                         ],
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n  \"workerId\": \"00000000-0000-0000-0000-000000000998\",\n  \"cafeteriaId\": \"{{CAFETERIA_ID}}\",\n  \"role\": \"Auxiliar\"\n}"
+                            "raw": "{\n  \"workerId\": \"{{MISSING_UUID}}\",\n  \"cafeteriaId\": \"{{CAFETERIA_ID}}\",\n  \"role\": \"Auxiliar\"\n}"
                         },
                         "url": {
                             "raw": "{{BASE_URL}}/workers/assignments",
@@ -474,12 +1086,183 @@
                         {
                             "listen": "test",
                             "script": {
+                                "type": "text/javascript",
                                 "exec": [
-                                    "pm.test('status 4xx when worker missing', function () {",
-                                    "  pm.expect(pm.response.code).to.be.oneOf([400, 404]);",
-                                    "});"
-                                ],
-                                "type": "text/javascript"
+                                    "pm.test('status 4xx when worker missing', function () { pm.expect(pm.response.code).to.be.oneOf([400, 404]); });"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Get Assignments (All)",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{ACCESS_TOKEN}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{BASE_URL}}/workers/assignments",
+                            "host": [
+                                "{{BASE_URL}}"
+                            ],
+                            "path": [
+                                "workers",
+                                "assignments"
+                            ]
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('status 200', function () { pm.response.to.have.status(200); });"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Get Assignments by WorkerId (OK)",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{ACCESS_TOKEN}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{BASE_URL}}/workers/assignments/worker/{{WORKER_ID}}",
+                            "host": [
+                                "{{BASE_URL}}"
+                            ],
+                            "path": [
+                                "workers",
+                                "assignments",
+                                "worker",
+                                "{{WORKER_ID}}"
+                            ]
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('status 200', function () { pm.response.to.have.status(200); });"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Get Assignments by WorkerId (Invalid UUID)",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{ACCESS_TOKEN}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{BASE_URL}}/workers/assignments/worker/not-a-uuid",
+                            "host": [
+                                "{{BASE_URL}}"
+                            ],
+                            "path": [
+                                "workers",
+                                "assignments",
+                                "worker",
+                                "not-a-uuid"
+                            ]
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('status 400', function () { pm.response.to.have.status(400); });"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Get Assignments by CafeteriaId (OK)",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{ACCESS_TOKEN}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{BASE_URL}}/workers/assignments/cafeteria/{{CAFETERIA_ID}}",
+                            "host": [
+                                "{{BASE_URL}}"
+                            ],
+                            "path": [
+                                "workers",
+                                "assignments",
+                                "cafeteria",
+                                "{{CAFETERIA_ID}}"
+                            ]
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('status 200', function () { pm.response.to.have.status(200); });"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Get Assignments by CafeteriaId (Invalid UUID)",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{ACCESS_TOKEN}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{BASE_URL}}/workers/assignments/cafeteria/not-a-uuid",
+                            "host": [
+                                "{{BASE_URL}}"
+                            ],
+                            "path": [
+                                "workers",
+                                "assignments",
+                                "cafeteria",
+                                "not-a-uuid"
+                            ]
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('status 400', function () { pm.response.to.have.status(400); });"
+                                ]
                             }
                         }
                     ]
@@ -507,6 +1290,10 @@
         {
             "key": "SCHOOL_ID",
             "value": "33333333-3333-3333-3333-333333333333"
+        },
+        {
+            "key": "MISSING_UUID",
+            "value": "00000000-0000-0000-0000-000000000999"
         },
         {
             "key": "PROVIDER_ID",

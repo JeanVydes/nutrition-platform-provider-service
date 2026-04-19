@@ -1,5 +1,12 @@
 import type { FastifyInstance } from "fastify";
 
+import { FindAllWorkerAssignmentsUseCase } from "@/core/application/use-cases/workers/find-all-worker-assignments.use-case.js";
+import { FindAllWorkersUseCase } from "@/core/application/use-cases/workers/find-all-workers.use-case.js";
+import { FindWorkerAssignmentsByCafeteriaIdUseCase } from "@/core/application/use-cases/workers/find-worker-assignments-by-cafeteria-id.use-case.js";
+import { FindWorkerAssignmentsByWorkerIdUseCase } from "@/core/application/use-cases/workers/find-worker-assignments-by-worker-id.use-case.js";
+import { FindWorkerByAccountIdUseCase } from "@/core/application/use-cases/workers/find-worker-by-account-id.use-case.js";
+import { FindWorkerByIdUseCase } from "@/core/application/use-cases/workers/find-worker-by-id.use-case.js";
+import { FindWorkersByProviderIdUseCase } from "@/core/application/use-cases/workers/find-workers-by-provider-id.use-case.js";
 import { RegisterWorkerUseCase } from "@/core/application/use-cases/workers/register-worker.use-case.js";
 import { AssignWorkerCafeteriaUseCase } from "@/core/application/use-cases/workers/assign-worker-cafeteria.use-case.js";
 import { ProviderDrizzleRepository } from "@/modules/providers/infrastructure/drizzle/repositories/provider.drizzle.repository.js";
@@ -20,9 +27,33 @@ export async function workerRoutes(app: FastifyInstance): Promise<void> {
         workerRepository,
         cafeteriaRepository
     );
+    const findAllWorkersUseCase = new FindAllWorkersUseCase(workerRepository);
+    const findWorkerByIdUseCase = new FindWorkerByIdUseCase(workerRepository);
+    const findWorkersByProviderIdUseCase = new FindWorkersByProviderIdUseCase(workerRepository);
+    const findWorkerByAccountIdUseCase = new FindWorkerByAccountIdUseCase(workerRepository);
+    const findAllWorkerAssignmentsUseCase = new FindAllWorkerAssignmentsUseCase(assignmentRepository);
+    const findWorkerAssignmentsByWorkerIdUseCase = new FindWorkerAssignmentsByWorkerIdUseCase(assignmentRepository);
+    const findWorkerAssignmentsByCafeteriaIdUseCase = new FindWorkerAssignmentsByCafeteriaIdUseCase(assignmentRepository);
 
-    const workerController = new WorkerController(registerWorkerUseCase, assignWorkerUseCase);
+    const workerController = new WorkerController(
+        registerWorkerUseCase,
+        assignWorkerUseCase,
+        findAllWorkersUseCase,
+        findWorkerByIdUseCase,
+        findWorkersByProviderIdUseCase,
+        findWorkerByAccountIdUseCase,
+        findAllWorkerAssignmentsUseCase,
+        findWorkerAssignmentsByWorkerIdUseCase,
+        findWorkerAssignmentsByCafeteriaIdUseCase,
+    );
 
     app.post("/workers", workerController.registerWorker.bind(workerController));
     app.post("/workers/assignments", workerController.assignWorker.bind(workerController));
+    app.get("/workers", workerController.findAllWorkers.bind(workerController));
+    app.get("/workers/provider/:providerId", workerController.findWorkersByProviderId.bind(workerController));
+    app.get("/workers/account/:accountId", workerController.findWorkerByAccountId.bind(workerController));
+    app.get("/workers/assignments", workerController.findAllAssignments.bind(workerController));
+    app.get("/workers/assignments/worker/:workerId", workerController.findAssignmentsByWorkerId.bind(workerController));
+    app.get("/workers/assignments/cafeteria/:cafeteriaId", workerController.findAssignmentsByCafeteriaId.bind(workerController));
+    app.get("/workers/:id", workerController.findWorkerById.bind(workerController));
 }
