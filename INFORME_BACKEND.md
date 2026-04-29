@@ -1,12 +1,11 @@
-# INFORME SERVICIO GESTIÓN DE PROVEEDORES, CAFETERÍAS Y PERSONAL — BACKEND PRODUCCIÓN
+# Pay School Snacks Providers Service
 
 | Campo | Valor |
 |---|---|
-| **Nombre** | provider-service |
-| **Descripción** | Microservicio de Gestión de Proveedores, Cafeterías y Personal |
-| **Versión** | 1.0.0 — Producción |
-| **Puerto por defecto** | 8080 |
-| **URL Producción** | https://api-provider-prod.taminaka.com |
+| **Nombre** | Pay School Snacks Providers Service |
+| **Descripción** | Microservicio responsable de la gestión de proveedores, cafeterías y fuerza laboral. |
+| **Versión** | 1.0.0 |
+| **Entorno** | Node.js (API REST) |
 | **Bounded Context** | Gestión de Proveedores, Ubicaciones y Fuerza Laboral |
 | **Integrantes** | Jean Vides, Luis Rincon, Santiago Criollo |
 | **Repositorio** | https://github.com/JeanVydes/nutrition-platform-provider-service |
@@ -15,7 +14,7 @@
 
 ## 1. Propósito y Alcance
 
-El `provider-service` es la fuente de verdad para todo lo relacionado con la estructura organizacional del sistema: quién opera una cafetería, en qué colegio está ubicada, qué trabajadores pertenecen a qué proveedor, y cómo están asignados a cada ubicación.
+La plataforma **Pay School Snacks** es un ecosistema amplio. Este servicio, **Pay School Snacks Providers Service**, abarca únicamente una pequeña parte de ese ecosistema: somos la fuente de verdad para la gestión de los proveedores. Determinamos quién opera una cafetería, en qué colegio está ubicada, qué trabajadores pertenecen a qué proveedor y cómo están asignados a cada ubicación.
 
 **Preguntas que este servicio responde:**
 - ¿Qué cafeterías opera un proveedor determinado?
@@ -28,27 +27,27 @@ El `provider-service` es la fuente de verdad para todo lo relacionado con la est
 
 ---
 
-## 2. Stack Tecnológico (Backend)
+## 2. Stack Tecnológico
 
 | Componente | Tecnología | Justificación Técnica |
 |---|---|---|
-| Lenguaje | TypeScript 5 | Tipado estricto. Previene en tiempo de compilación que un campo como `salario_trabajador` sea tratado como `string` en lugar de `number`. Los errores de tipo no llegan a producción. |
+| Lenguaje | TypeScript 5 | Tipado estricto. Previene en tiempo de compilación que un campo como `salario_trabajador` sea tratado como `string` en lugar de `number`. |
 | Runtime | Node.js ≥ 22 / Bun | Arquitectura no bloqueante (event loop). Maneja miles de peticiones concurrentes sin bloquear el hilo principal. Bun acelera la compilación y ejecución del código. |
 | Framework HTTP | Fastify 5.7 + fastify-type-provider-zod | Menor overhead por petición frente a Express. Garantiza latencias bajas al consultar asignaciones o crear trabajadores desde múltiples cafeterías simultáneamente. |
 | Validación | Zod 4 | Escudo de entrada. Antes de que cualquier dato toque la lógica de negocio, Zod verifica que el JSON recibido cumpla exactamente el esquema acordado. UUID malformados, campos faltantes y tipos incorrectos son rechazados en la capa HTTP. |
-| Base de Datos | PostgreSQL 16 con pgcrypto | Integridad referencial garantizada a nivel de motor. Es estructuralmente imposible eliminar un proveedor con cafeterías activas o una cafetería con asignaciones vigentes. |
+| Base de Datos | PostgreSQL 16 con pgcrypto | Integridad referencial garantizada a nivel de motor. |
 | ORM | Drizzle ORM 0.45 | Genera SQL predecible y ligero. A diferencia de ORMs que instancian grafos de objetos en memoria, Drizzle mantiene el consumo de RAM del microservicio estable independientemente del volumen de registros. |
-| Logger | Pino / Pino-pretty | Pino emite logs estructurados en JSON con mínimo impacto en CPU. Pino-pretty los transforma a formato legible en desarrollo. En producción, los logs JSON son consumibles directamente por agentes de observabilidad externos. |
+| Logger | Pino / Pino-pretty | Pino emite logs estructurados en JSON con mínimo impacto en CPU. Son consumibles directamente por agentes de observabilidad externos o transformables a formato legible. |
 | Rate Limiting | @fastify/rate-limit | Previene saturación artificial del servicio por peticiones abusivas o errores en clientes. Configurable vía variables de entorno. |
-| CORS | @fastify/cors | Restringe los orígenes HTTP permitidos según el entorno de despliegue. En producción se deben especificar dominios explícitos. |
+| CORS | @fastify/cors | Restringe los orígenes HTTP permitidos, especificando los dominios explícitos autorizados. |
 | Errores HTTP | @fastify/sensible | Estandariza la estructura JSON de todas las respuestas de error con códigos HTTP semánticos. |
 | Seguridad | Delegada a microservicio externo | Autenticación real mediante JWT. Cada petición protegida delega la validación del token al servicio de seguridad vía introspección. |
 
 ---
 
-## 3. Seguridad (Producción)
+## 3. Seguridad
 
-La seguridad ya **no es mockup**. El servicio implementa autenticación real delegada a un microservicio de seguridad externo.
+El servicio implementa autenticación real delegada a un microservicio de seguridad.
 
 ### 3.1 Autenticación — Introspección de Token JWT
 
@@ -65,7 +64,6 @@ Toda petición HTTP (excepto `GET /health` y `OPTIONS`) pasa por un hook `onRequ
 
 ```
 Servicio de Seguridad: https://mriai.coreunimag.com/api/auth
-Ruta de introspección: /me (configurable vía SECURITY_ME_PATH)
 ```
 
 ### 3.2 Validación de Cuentas de Trabajadores
@@ -108,31 +106,31 @@ type AuthContext = {
 │  │  ┌─────────────────────────────────────────────────────────┐  │  │
 │  │  │  DOMINIO                                                │  │  │
 │  │  │  Entidades: Provider, Cafeteria, Worker,                │  │  │
-│  │  │             WorkerAssignment, SchoolConfig               │  │  │
+│  │  │             WorkerAssignment, SchoolConfig              │  │  │
 │  │  │  Interfaces: IProviderRepository, IWorkerRepository,    │  │  │
-│  │  │             ICafeteriaRepository, IAccountValidation...  │  │  │
+│  │  │             ICafeteriaRepository, IAccountValidation... │  │  │
 │  │  │  Sin dependencia de Fastify, Drizzle ni frameworks.     │  │  │
 │  │  └─────────────────────────────────────────────────────────┘  │  │
 │  └───────────────────────────────────────────────────────────────┘  │
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
-### 4.1 Flujo de una Petición HTTP (Producción)
+### 4.1 Flujo de una Petición HTTP
 
 ```
 Cliente HTTP
-│
-▼
+    │
+    ▼
 [1] Hook onRequest — Autenticación JWT
 │   Introspección contra servicio de seguridad externo
 │   Rechaza con 401 si token inválido o ausente
-▼
+    ▼
 [2] Router Fastify
 │   Dirige la petición al módulo correcto
-▼
+    ▼
 [3] Validación Zod (en Controller)
 │   Rechaza con 400 si UUID es inválido o el body no cumple el esquema
-▼
+    ▼
 [4] Controlador
 │   Extrae datos validados, instancia el Use Case con sus dependencias
 ▼
@@ -150,7 +148,7 @@ Cliente HTTP
 [8] Respuesta JSON → cliente
 ```
 
-### 4.2 Estructura de Directorios (Backend)
+### 4.2 Estructura de Directorios
 
 ```
 provider-service/
@@ -542,7 +540,7 @@ Verificación de disponibilidad del servicio. Responde **200 OK** sin autenticac
 
 **Status OK:** 201 Created
 
-> **Cambio de producción:** Al crear un trabajador, el servicio valida que el `accountId` corresponda a una cuenta real en el servicio de seguridad antes de persistir el registro.
+> **Nota:** Al crear un trabajador, el servicio valida que el `accountId` corresponda a una cuenta real en el servicio de seguridad antes de persistir el registro.
 
 **Body:**
 ```json
@@ -617,7 +615,7 @@ Verificación de disponibilidad del servicio. Responde **200 OK** sin autenticac
 
 **Status OK:** 200
 
-> **Cambio de producción:** Si se actualiza el `accountId`, se valida contra el servicio de seguridad.
+> **Nota:** Si se actualiza el `accountId`, se valida contra el servicio de seguridad.
 
 **Body (al menos un campo requerido):**
 ```json
@@ -849,14 +847,14 @@ Para errores de rate limit:
 
 ## 9. Infraestructura y Despliegue
 
-### Variables de Entorno (Producción)
+### Variables de Entorno
 
-| Variable | Descripción | Valor Producción |
+| Variable | Descripción | Uso / Ejemplo |
 |---|---|---|
 | `DB_HOST` | Host de PostgreSQL | *(infraestructura interna)* |
 | `DB_PORT` | Puerto de PostgreSQL | 5432 |
-| `DB_USER` | Usuario de la base de datos | *(credenciales de producción)* |
-| `DB_PASSWORD` | Contraseña de la base de datos | *(credenciales de producción)* |
+| `DB_USER` | Usuario de la base de datos | *(credenciales seguras)* |
+| `DB_PASSWORD` | Contraseña de la base de datos | *(credenciales seguras)* |
 | `DB_NAME` | Nombre de la base de datos | ubicaciones |
 | `DB_MAX_CONNECTIONS` | Máximo de conexiones al pool | 10 |
 | `DB_IDLE_TIMEOUT` | Timeout de conexión inactiva (ms) | 30000 |
@@ -864,7 +862,7 @@ Para errores de rate limit:
 | `NODE_ENV` | Entorno de ejecución | `production` |
 | `HOST` | Host del servidor Fastify | 0.0.0.0 |
 | `PORT` | Puerto del servidor Fastify | 8080 |
-| `CORS_ORIGINS` | Orígenes permitidos (separados por coma) | *(dominios de producción)* |
+| `CORS_ORIGINS` | Orígenes permitidos (separados por coma) | *(dominios autorizados)* |
 | `RATE_LIMIT_MAX` | Máximo de requests por ventana | 120 |
 | `RATE_LIMIT_TIME_WINDOW` | Ventana de rate limiting | 1 minute |
 | `SECURITY_SERVICE_URL` | URL base del servicio de seguridad | `https://mriai.coreunimag.com/api/auth` |
@@ -921,8 +919,7 @@ Drizzle Kit (`drizzle-kit generate` / `drizzle-kit push`). El schema inicial y s
 
 ### Logging
 
-- **Producción:** Pino emite logs estructurados en JSON (nivel `info`) listos para ser ingestados por agentes externos (Prometheus, FluentBit, Datadog).
-- **Desarrollo:** Pino-pretty transforma la salida a formato legible por humanos con colores y timestamps.
+Pino emite logs estructurados en JSON (nivel `info`) listos para ser ingestados por agentes externos (Prometheus, FluentBit, Datadog). Opcionalmente, Pino-pretty puede transformar la salida a formato legible por humanos con colores y timestamps.
 
 ### Manejo de Errores
 
@@ -946,8 +943,7 @@ El error handler global de Fastify captura:
 
 ### CORS
 
-- **Desarrollo:** Todos los orígenes permitidos si `CORS_ORIGINS` está vacío y `NODE_ENV !== production`.
-- **Producción:** Solo orígenes explícitos definidos en `CORS_ORIGINS`.
+Solo se permiten los orígenes explícitos definidos en la variable de entorno `CORS_ORIGINS`.
 - Métodos permitidos: GET, POST, PUT, PATCH, DELETE, OPTIONS.
 - Headers permitidos: Content-Type, Authorization.
 - Credenciales: habilitadas.
@@ -1008,11 +1004,11 @@ Cada request incluye scripts de test que:
 
 ## 12. Reglas de Integridad del Negocio
 
-Implementadas en los Casos de Uso y reforzadas por restricciones de clave foránea en PostgreSQL (`ON DELETE RESTRICT`):
+Implementadas en los Casos de Uso y reforzadas por restricciones de clave foránea en PostgreSQL (`ON DELETE CASCADE`):
 
-1. **No se puede eliminar** un proveedor si tiene cafeterías o trabajadores asociados.
-2. **No se puede eliminar** una cafetería si tiene asignaciones de trabajadores activas.
-3. **No se puede eliminar** un trabajador si tiene asignaciones de trabajadores activas.
+1. **Eliminación en cascada:** Al eliminar un proveedor, se eliminan automáticamente sus cafeterías y trabajadores asociados.
+2. **Eliminación en cascada:** Al eliminar una cafetería, se eliminan automáticamente las asignaciones de trabajadores activas.
+3. **Eliminación en cascada:** Al eliminar un trabajador, se eliminan automáticamente sus asignaciones activas.
 4. **No se puede crear** una cafetería referenciando un `id_proveedor` inexistente → 400/404.
 5. **No se puede crear** un trabajador referenciando un `id_proveedor` inexistente → 400/404.
 6. **No se puede crear** un trabajador con un `accountId` que no existe en el servicio de seguridad → 400.
@@ -1023,7 +1019,7 @@ Implementadas en los Casos de Uso y reforzadas por restricciones de clave forán
 
 ---
 
-## 13. Datos de Seed (Desarrollo)
+## 13. Datos de Seed
 
 El archivo `provider-service-schema.sql` incluye datos iniciales idempotentes (`ON CONFLICT DO NOTHING`):
 
@@ -1033,10 +1029,8 @@ El archivo `provider-service-schema.sql` incluye datos iniciales idempotentes (`
 | proveedores | Proveedor Uno S.A.S (NIT-900111111) y Proveedor Dos S.A.S (NIT-900222222) |
 | cafeterias | Cafetería Central A (Colegio 1 / Proveedor 1) y Cafetería Central B (Colegio 2 / Proveedor 2) |
 
-> **Nota de producción:** Los seed de trabajadores y asignaciones se eliminaron del SQL. En producción, los trabajadores se crean con cuentas reales del servicio de seguridad. La colección Postman requiere autenticación real (flujo OTP) para crear trabajadores con cuentas válidas.
-
 ---
 
 *Ingeniería de Software — Universidad Del Magdalena*
 *Fecha de actualización: 28 de abril de 2026*
-*Versión: Producción*
+*Versión: 1.0.0*
