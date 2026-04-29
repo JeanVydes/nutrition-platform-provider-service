@@ -2,7 +2,14 @@
 set -euo pipefail
 
 BASE_URL="${BASE_URL:-http://localhost:8080}"
-AUTH_HEADER="Authorization: Bearer ${ACCESS_TOKEN:-offline-token}"
+SECURITY_BASE_URL="${SECURITY_BASE_URL:-https://mriai.coreunimag.com/api/auth}"
+
+if [[ -z "${ACCESS_TOKEN:-}" ]]; then
+  echo "[smoke] ACCESS_TOKEN is required (real security token)"
+  exit 1
+fi
+
+AUTH_HEADER="Authorization: Bearer ${ACCESS_TOKEN}"
 CONTENT_HEADER="Content-Type: application/json"
 
 gen_uuid() {
@@ -38,8 +45,17 @@ post_json() {
 wait_for_health
 
 PROVIDER_ACCOUNT_ID="$(gen_uuid)"
-WORKER_ACCOUNT_ID="$(gen_uuid)"
 SCHOOL_ID="$(gen_uuid)"
+
+echo "[smoke] Fetching user id from security /me ..."
+me_response=$(curl -fsS -H "${AUTH_HEADER}" "${SECURITY_BASE_URL}/me")
+WORKER_ACCOUNT_ID=$(printf '%s' "${me_response}" | node -e "const fs=require('fs');const data=JSON.parse(fs.readFileSync(0,'utf8'));console.log(data?.datos?.id ?? data?.datos?.idUsuario ?? data?.idUsuario ?? '');")
+
+if [[ -z "${WORKER_ACCOUNT_ID}" ]]; then
+  echo "[smoke] Failed to resolve user id from /me"
+  echo "${me_response}"
+  exit 1
+fi
 
 echo "[smoke] Creating provider ..."
 provider_response=$(post_json "${BASE_URL}/providers" "{\"accountId\":\"${PROVIDER_ACCOUNT_ID}\",\"name\":\"Smoke Provider\",\"companyRegistration\":\"NIT-SMOKE-001\",\"contactEmail\":\"smoke@provider.test\",\"contactPhone\":\"+573001112233\"}")

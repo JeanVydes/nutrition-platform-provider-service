@@ -1,3 +1,3 @@
 export interface IAccountValidationService {
-    ensureAccountExists(accountId: string): Promise<void>;
+    ensureAccountExists(accountId: string, accessToken?: string): Promise<void>;
 }

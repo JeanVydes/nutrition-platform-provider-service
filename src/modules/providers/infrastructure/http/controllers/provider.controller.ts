@@ -12,6 +12,10 @@ export const registerProviderSchema = z.object({
   companyRegistration: z.string().optional(),
   contactEmail: z.string().email().optional(),
   contactPhone: z.string().optional(),
+  pais: z.string().optional(),
+  ciudad: z.string().optional(),
+  billingAddress: z.string().optional(),
+  oficina: z.string().optional(),
 });
 
 export const updateProviderSchema = z.object({
@@ -19,6 +23,10 @@ export const updateProviderSchema = z.object({
   companyRegistration: z.string().nullable().optional(),
   contactEmail: z.string().email().nullable().optional(),
   contactPhone: z.string().nullable().optional(),
+  pais: z.string().nullable().optional(),
+  ciudad: z.string().nullable().optional(),
+  billingAddress: z.string().nullable().optional(),
+  oficina: z.string().nullable().optional(),
 }).refine((value) => Object.keys(value).length > 0, {
   message: 'At least one field is required to update provider',
 });
@@ -38,6 +46,7 @@ export class ProviderController {
       const provider = await this.registerProviderUseCase.execute(data);
       return reply.status(201).send(provider);
     } catch (error) {
+      console.error(error);
       if (error instanceof z.ZodError) return reply.status(400).send(error.flatten());
       return reply.status(400).send({ message: (error as Error).message });
     }

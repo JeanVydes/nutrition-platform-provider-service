@@ -37,15 +37,12 @@ services:
       NODE_ENV: development
       HOST: 0.0.0.0
       PORT: 8080
-      OFFLINE: "true"
-      OFFLINE_ACCOUNT_ID: mock-account-id
-      OFFLINE_ROLES: developer
-      OFFLINE_SCOPES: "*"
       CORS_ORIGINS: ""
       RATE_LIMIT_MAX: 120
       RATE_LIMIT_TIME_WINDOW: 1 minute
-      SECURITY_SERVICE_URL: http://security-service:4000
-      SECURITY_INTROSPECTION_PATH: /auth/introspect
+      SECURITY_SERVICE_URL: https://mriai.coreunimag.com/api/auth
+      SECURITY_ME_PATH: /me
+      SECURITY_ACCOUNT_CHECK_PATH_TEMPLATE: /users/:id
     ports:
       - "8080:8080"
 

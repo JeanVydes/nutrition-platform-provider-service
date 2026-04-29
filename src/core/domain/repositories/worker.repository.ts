@@ -4,7 +4,7 @@ export interface IWorkerRepository {
   findById(id: string): Promise<Worker | null>;
   findAll(): Promise<Worker[]>;
   findByProviderId(providerId: string): Promise<Worker[]>;
-  findByAccountId(accountId: string): Promise<Worker | null>;
+  findByAccountId(accountId: string): Promise<Worker[]>;
   update(id: string, worker: Partial<Omit<Worker, 'id' | 'createdAt' | 'employmentStatus'>>): Promise<Worker | null>;
   deleteById(id: string): Promise<boolean>;
 }

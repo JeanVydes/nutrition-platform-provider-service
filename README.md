@@ -39,41 +39,27 @@ CORS_ORIGINS=
 RATE_LIMIT_MAX=120
 RATE_LIMIT_TIME_WINDOW=1 minute
 
-# Delegated security microservice (token introspection)
-SECURITY_SERVICE_URL=http://localhost:4000
-SECURITY_INTROSPECTION_PATH=/auth/introspect
+# Delegated security microservice (Pay School Snacks / ISUnimagdalena)
+SECURITY_SERVICE_URL=https://mriai.coreunimag.com/api/auth
+SECURITY_ME_PATH=/me
 
 # Worker account validation against security service
-SECURITY_ACCOUNT_CHECK_PATH_TEMPLATE=/accounts/:accountId
+SECURITY_ACCOUNT_CHECK_PATH_TEMPLATE=/users/:id
 SECURITY_ACCOUNT_CHECK_METHOD=GET
 SECURITY_SERVICE_TOKEN=
 
-# Offline mock mode (bypass security microservice)
-OFFLINE=false
-OFFLINE_ACCOUNT_ID=mock-account-id
-OFFLINE_ROLES=developer
-OFFLINE_SCOPES=*
 ```
 
 ## security model
 
-- This service does not handle login or password flows.
+- This service does not handle login, signup, passwords, or OTP flows.
+- The security microservice handles PIN/OTP login and user registration.
+- This service only receives the `Bearer` JWT token issued by security.
 - It expects `Authorization: Bearer <token>` on protected endpoints.
-- Each request token is validated against the external security service (`SECURITY_SERVICE_URL + SECURITY_INTROSPECTION_PATH`).
-- On `POST /workers`, the service validates that `accountId` exists in the security service using `SECURITY_ACCOUNT_CHECK_PATH_TEMPLATE`.
+- Each request token is validated against the external security service (`SECURITY_SERVICE_URL + SECURITY_ME_PATH`).
+- On `POST /workers`, the service validates that `accountId` exists in the security service using `SECURITY_ACCOUNT_CHECK_PATH_TEMPLATE` and the caller token.
 - `GET /health` is public (no auth, no rate limit).
 - If the token is missing/invalid/rejected, the API responds with `401 Unauthorized`.
-
-### offline mode (mock)
-
-- Set `OFFLINE=true` to run this service without the security microservice.
-- In this mode, auth introspection is bypassed and a mock auth context is injected on each protected request.
-- In this mode, worker account validation against security service is also bypassed.
-- Optional mock identity config:
-  - `OFFLINE_ACCOUNT_ID`
-  - `OFFLINE_ROLES` (comma-separated)
-  - `OFFLINE_SCOPES` (comma-separated)
-- Use this only for local development/testing. Keep `OFFLINE=false` in production.
 
 ## CORS and rate limiting
 
@@ -134,7 +120,7 @@ docker run --name location-service \
 
 ## api endpoints (for frontend)
 
-All protected endpoints require `Authorization: Bearer <token>` unless using `OFFLINE=true` in local development.
+All protected endpoints require `Authorization: Bearer <token>` from the security service.
 
 ### providers
 
@@ -159,7 +145,6 @@ All protected endpoints require `Authorization: Bearer <token>` unless using `OF
 - `GET /workers`
 - `GET /workers/:id`
 - `GET /workers/provider/:providerId`
-- `GET /workers/account/:accountId`
 - `PATCH /workers/:id`
 - `DELETE /workers/:id`
 
@@ -181,6 +166,7 @@ All protected endpoints require `Authorization: Bearer <token>` unless using `OF
 - Environment file: [postman/provider-service.local.postman_environment.json](postman/provider-service.local.postman_environment.json)
 - Coverage includes:
   - Happy path create/list/detail/filter requests.
+  - Security auth flow (request PIN + login) to fetch a real token.
   - Happy path update requests for provider, cafeteria, and worker.
   - Happy path delete requests for provider, cafeteria, worker, and assignment.
   - Validation scenarios (`400`) with invalid UUIDs.
@@ -209,7 +195,7 @@ All protected endpoints require `Authorization: Bearer <token>` unless using `OF
 8. Build detail/filter views with:
    - `GET /providers/account/:accountId`
    - `GET /cafeterias/:id`, `GET /cafeterias/provider/:providerId`
-   - `GET /workers/:id`, `GET /workers/provider/:providerId`, `GET /workers/account/:accountId`
+  - `GET /workers/:id`, `GET /workers/provider/:providerId`
    - `GET /workers/assignments/worker/:workerId`, `GET /workers/assignments/cafeteria/:cafeteriaId`
 
 ## authors

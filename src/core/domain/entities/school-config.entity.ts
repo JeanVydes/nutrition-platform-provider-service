@@ -5,6 +5,7 @@ export class SchoolConfig {
     public readonly puertoDb: number,
     public readonly nombreDb: string,
     public readonly usuarioDb: string | null,
+    public readonly schoolName: string | null,
     public readonly creadoEn: Date | null
   ) {}
 }

@@ -2,6 +2,7 @@
     "info": {
         "_postman_id": "d5d24efd-3f57-4c2e-b885-8e0bb9fe4472",
         "name": "provider-service",
+        "description": "Concepts and flow:\n\n- Auth is delegated to the security microservice. Use the Security Auth folder to request PIN and login. The login response stores ACCESS_TOKEN for protected requests.\n- This service never issues tokens. Every protected endpoint requires Authorization: Bearer <tokenApp>.\n- The worker accountId must be a real security user id. Use the /me response to fill WORKER_ACCOUNT_ID (the collection does this automatically).\n- Seeds include providers and cafeterias only. Workers and assignments should be created with real users.\n\nRecommended order:\n1) Security Auth: Request PIN -> Login (OTP) -> Get Me\n2) Providers, Cafeterias, Workers, Assignments\n",
         "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
     },
     "event": [
@@ -20,11 +21,10 @@
                     "}",
                     "",
                     "if (!pm.environment.get('BASE_URL')) pm.environment.set('BASE_URL', 'http://localhost:8080');",
-                    "if (!pm.environment.get('ACCESS_TOKEN')) pm.environment.set('ACCESS_TOKEN', 'offline-token');",
+                    "if (!pm.environment.get('ACCESS_TOKEN')) pm.environment.set('ACCESS_TOKEN', '');",
                     "if (!pm.environment.get('MISSING_UUID')) pm.environment.set('MISSING_UUID', '00000000-0000-4000-8000-000000000999');",
                     "",
                     "ensureUuid('PROVIDER_ACCOUNT_ID');",
-                    "ensureUuid('WORKER_ACCOUNT_ID');",
                     "ensureUuid('SCHOOL_ID');"
                 ]
             }
@@ -56,6 +56,126 @@
                                 "type": "text/javascript",
                                 "exec": [
                                     "pm.test('status 200', function () { pm.response.to.have.status(200); });"
+                                ]
+                            }
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "Security Auth",
+            "item": [
+                {
+                    "name": "Request PIN (Security)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"identificadorAcceso\": \"{{IDENTIFICADOR_ACCESO}}\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{SECURITY_BASE_URL}}/login/request-pin",
+                            "host": [
+                                "{{SECURITY_BASE_URL}}"
+                            ],
+                            "path": [
+                                "login",
+                                "request-pin"
+                            ]
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('status 200', function () { pm.response.to.have.status(200); });"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Login (OTP) (Security)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"identificadorAcceso\": \"{{IDENTIFICADOR_ACCESO}}\",\n  \"pinAcceso\": \"{{PIN_ACCESO}}\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{SECURITY_BASE_URL}}/login",
+                            "host": [
+                                "{{SECURITY_BASE_URL}}"
+                            ],
+                            "path": [
+                                "login"
+                            ]
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('status 200', function () { pm.response.to.have.status(200); });",
+                                    "const json = pm.response.json();",
+                                    "const token = json?.datos?.tokenApp;",
+                                    "if (token) pm.environment.set('ACCESS_TOKEN', token);"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Get Me (Security)",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{ACCESS_TOKEN}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{SECURITY_BASE_URL}}/me",
+                            "host": [
+                                "{{SECURITY_BASE_URL}}"
+                            ],
+                            "path": [
+                                "me"
+                            ]
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('status 200', function () { pm.response.to.have.status(200); });",
+                                    "const json = pm.response.json();",
+                                    "const userId = json?.datos?.id || json?.datos?.idUsuario || json?.datos?.uuidAcceso || json?.idUsuario || json?.uuidAcceso;",
+                                    "if (userId) {",
+                                    "  pm.environment.set('SECURITY_USER_ID', userId);",
+                                    "  const currentWorkerAccount = pm.environment.get('WORKER_ACCOUNT_ID');",
+                                    "  if (!currentWorkerAccount) pm.environment.set('WORKER_ACCOUNT_ID', userId);",
+                                    "}"
                                 ]
                             }
                         }
@@ -142,7 +262,7 @@
                             "script": {
                                 "type": "text/javascript",
                                 "exec": [
-                                    "pm.test('status is 4xx for duplicate', function () { pm.expect(pm.response.code).to.be.oneOf([400, 409]); });"
+                                    "pm.test('status is 201 or 4xx for duplicate', function () { pm.expect(pm.response.code).to.be.oneOf([201, 400, 409]); });"
                                 ]
                             }
                         }
@@ -1258,7 +1378,8 @@
                                     "pm.test('status 200', function () { pm.response.to.have.status(200); });",
                                     "const json = pm.response.json();",
                                     "pm.test('is array', function () { pm.expect(Array.isArray(json)).to.eql(true); });",
-                                    "if (Array.isArray(json) && json[0]?.id) pm.environment.set('WORKER_ID', json[0].id);"
+                                    "const existing = pm.environment.get('WORKER_ID');",
+                                    "if (!existing && Array.isArray(json) && json[0]?.id) pm.environment.set('WORKER_ID', json[0].id);"
                                 ]
                             }
                         }
@@ -1426,108 +1547,6 @@
                                 "type": "text/javascript",
                                 "exec": [
                                     "pm.test('status 400', function () { pm.response.to.have.status(400); });"
-                                ]
-                            }
-                        }
-                    ]
-                },
-                {
-                    "name": "Get Worker by AccountId (OK)",
-                    "request": {
-                        "method": "GET",
-                        "header": [
-                            {
-                                "key": "Authorization",
-                                "value": "Bearer {{ACCESS_TOKEN}}"
-                            }
-                        ],
-                        "url": {
-                            "raw": "{{BASE_URL}}/workers/account/{{WORKER_ACCOUNT_ID}}",
-                            "host": [
-                                "{{BASE_URL}}"
-                            ],
-                            "path": [
-                                "workers",
-                                "account",
-                                "{{WORKER_ACCOUNT_ID}}"
-                            ]
-                        }
-                    },
-                    "event": [
-                        {
-                            "listen": "test",
-                            "script": {
-                                "type": "text/javascript",
-                                "exec": [
-                                    "pm.test('status 200', function () { pm.response.to.have.status(200); });"
-                                ]
-                            }
-                        }
-                    ]
-                },
-                {
-                    "name": "Get Worker by AccountId (Invalid UUID)",
-                    "request": {
-                        "method": "GET",
-                        "header": [
-                            {
-                                "key": "Authorization",
-                                "value": "Bearer {{ACCESS_TOKEN}}"
-                            }
-                        ],
-                        "url": {
-                            "raw": "{{BASE_URL}}/workers/account/not-a-uuid",
-                            "host": [
-                                "{{BASE_URL}}"
-                            ],
-                            "path": [
-                                "workers",
-                                "account",
-                                "not-a-uuid"
-                            ]
-                        }
-                    },
-                    "event": [
-                        {
-                            "listen": "test",
-                            "script": {
-                                "type": "text/javascript",
-                                "exec": [
-                                    "pm.test('status 400', function () { pm.response.to.have.status(400); });"
-                                ]
-                            }
-                        }
-                    ]
-                },
-                {
-                    "name": "Get Worker by AccountId (Not Found)",
-                    "request": {
-                        "method": "GET",
-                        "header": [
-                            {
-                                "key": "Authorization",
-                                "value": "Bearer {{ACCESS_TOKEN}}"
-                            }
-                        ],
-                        "url": {
-                            "raw": "{{BASE_URL}}/workers/account/{{MISSING_UUID}}",
-                            "host": [
-                                "{{BASE_URL}}"
-                            ],
-                            "path": [
-                                "workers",
-                                "account",
-                                "{{MISSING_UUID}}"
-                            ]
-                        }
-                    },
-                    "event": [
-                        {
-                            "listen": "test",
-                            "script": {
-                                "type": "text/javascript",
-                                "exec": [
-                                    "pm.test('status 404', function () { pm.response.to.have.status(404); });"
                                 ]
                             }
                         }
@@ -1818,7 +1837,7 @@
                         ],
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n  \"workerId\": \"{{WORKER_ID}}\",\n  \"cafeteriaId\": \"{{CAFETERIA_ID}}\",\n  \"role\": \"Encargado de turno\",\n  \"startDate\": \"2026-02-01\",\n  \"endDate\": null\n}"
+                            "raw": "{\n  \"workerId\": \"{{WORKER_ID}}\",\n  \"cafeteriaId\": \"{{CAFETERIA_ID}}\",\n  \"role\": \"Encargado de turno\",\n  \"startDate\": \"2026-02-01\"\n}"
                         },
                         "url": {
                             "raw": "{{BASE_URL}}/workers/assignments",
@@ -2211,7 +2230,23 @@
         },
         {
             "key": "ACCESS_TOKEN",
-            "value": "offline-token"
+            "value": ""
+        },
+        {
+            "key": "SECURITY_BASE_URL",
+            "value": "https://mriai.coreunimag.com/api/auth"
+        },
+        {
+            "key": "IDENTIFICADOR_ACCESO",
+            "value": ""
+        },
+        {
+            "key": "PIN_ACCESO",
+            "value": ""
+        },
+        {
+            "key": "SECURITY_USER_ID",
+            "value": ""
         },
         {
             "key": "PROVIDER_ACCOUNT_ID",

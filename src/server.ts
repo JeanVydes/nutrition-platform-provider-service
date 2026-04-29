@@ -13,6 +13,7 @@ type AuthContext = {
     accountId: string;
     roles: string[];
     scopes: string[];
+    accessToken: string;
 };
 
 type AuthenticatedRequest = FastifyRequest & {
@@ -31,46 +32,55 @@ function parseOrigins(value: string | undefined): string[] {
         .filter((item) => item.length > 0);
 }
 
+function decodeJwtPayload(token: string): {
+    sub?: string;
+    roles?: string[];
+    scopes?: string[];
+    uuidAcceso?: string;
+} | null {
+    const parts = token.split(".");
+    if (parts.length < 2 || !parts[1]) return null;
+
+    const base64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+    const padded = base64.padEnd(Math.ceil(base64.length / 4) * 4, "=");
+
+    try {
+        return JSON.parse(Buffer.from(padded, "base64").toString("utf8"));
+    } catch {
+        return null;
+    }
+}
+
 async function introspectToken(
     securityServiceUrl: string,
-    introspectionPath: string,
+    mePath: string,
     token: string
 ): Promise<AuthContext | null> {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 3000);
 
     try {
-        const response = await fetch(`${securityServiceUrl}${introspectionPath}`, {
-            method: "POST",
+        const response = await fetch(`${securityServiceUrl}${mePath}`, {
+            method: "GET",
             headers: {
-                "content-type": "application/json",
                 authorization: `Bearer ${token}`,
             },
-            body: JSON.stringify({ token }),
             signal: controller.signal,
         });
 
         if (!response.ok) return null;
 
-        const payload = (await response.json()) as {
-            active?: boolean;
-            valid?: boolean;
-            sub?: string;
-            accountId?: string;
-            userId?: string;
-            roles?: string[];
-            scopes?: string[];
-        };
+        const payload = decodeJwtPayload(token);
+        if (!payload) return null;
 
-        const isActive = payload.active ?? payload.valid ?? true;
-        const accountId = payload.sub ?? payload.accountId ?? payload.userId ?? "";
-
-        if (!isActive || !accountId) return null;
+        const accountId = payload.sub ?? payload.uuidAcceso ?? "";
+        if (!accountId) return null;
 
         return {
             accountId,
             roles: payload.roles ?? [],
             scopes: payload.scopes ?? [],
+            accessToken: token,
         };
     } catch {
         return null;
@@ -81,16 +91,8 @@ async function introspectToken(
 
 export async function createApp(): Promise<FastifyInstance> {
     const NODE_ENV = process.env.NODE_ENV || "development";
-    const OFFLINE = (process.env.OFFLINE || "false").toLowerCase() === "true";
-    const OFFLINE_ACCOUNT_ID = process.env.OFFLINE_ACCOUNT_ID || "mock-account-id";
-    const OFFLINE_ROLES = process.env.OFFLINE_ROLES
-        ? process.env.OFFLINE_ROLES.split(",").map((role) => role.trim()).filter(Boolean)
-        : ["developer"];
-    const OFFLINE_SCOPES = process.env.OFFLINE_SCOPES
-        ? process.env.OFFLINE_SCOPES.split(",").map((scope) => scope.trim()).filter(Boolean)
-        : ["*"];
-    const SECURITY_SERVICE_URL = process.env.SECURITY_SERVICE_URL || "http://localhost:4000";
-    const SECURITY_INTROSPECTION_PATH = process.env.SECURITY_INTROSPECTION_PATH || "/auth/introspect";
+    const SECURITY_SERVICE_URL = process.env.SECURITY_SERVICE_URL || "https://mriai.coreunimag.com/api/auth";
+    const SECURITY_ME_PATH = process.env.SECURITY_ME_PATH || "/me";
     const AUTH_BYPASS_PATHS = new Set(["/health"]);
 
     const allowedOrigins = parseOrigins(process.env.CORS_ORIGINS);
@@ -181,23 +183,10 @@ export async function createApp(): Promise<FastifyInstance> {
         }),
     });
 
-    if (OFFLINE) {
-        app.log.warn("OFFLINE mode enabled: external security service introspection is bypassed");
-    }
-
     app.addHook("onRequest", async (request, reply) => {
         const requestPath = getPathFromUrl(request.url);
 
         if (AUTH_BYPASS_PATHS.has(requestPath) || request.method === "OPTIONS") {
-            return;
-        }
-
-        if (OFFLINE) {
-            (request as AuthenticatedRequest).auth = {
-                accountId: OFFLINE_ACCOUNT_ID,
-                roles: OFFLINE_ROLES,
-                scopes: OFFLINE_SCOPES,
-            };
             return;
         }
 
@@ -220,7 +209,7 @@ export async function createApp(): Promise<FastifyInstance> {
 
         const auth = await introspectToken(
             SECURITY_SERVICE_URL,
-            SECURITY_INTROSPECTION_PATH,
+            SECURITY_ME_PATH,
             token
         );
 

@@ -10,6 +10,7 @@ export class Worker {
     public readonly contractType: string | null,
     public readonly hireDate: string | null,
     public readonly salary: string | null,
-    public readonly createdAt: Date | null
+    public readonly createdAt: Date | null,
+    public readonly providerName?: string | null
   ) {}
 }

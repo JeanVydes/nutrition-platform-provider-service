@@ -15,6 +15,10 @@ export class ProviderDrizzleRepository implements IProviderRepository {
                 companyRegistration: provider.companyRegistration,
                 contactEmail: provider.contactEmail,
                 contactPhone: provider.contactPhone,
+                pais: provider.pais,
+                ciudad: provider.ciudad,
+                billingAddress: provider.billingAddress,
+                oficina: provider.oficina,
             })
             .returning();
 
@@ -29,7 +33,11 @@ export class ProviderDrizzleRepository implements IProviderRepository {
             row.companyRegistration ?? null,
             row.contactEmail ?? null,
             row.contactPhone ?? null,
-            row.createdAt ?? null
+            row.createdAt ?? null,
+            row.pais ?? null,
+            row.ciudad ?? null,
+            row.billingAddress ?? null,
+            row.oficina ?? null
         );
     }
 
@@ -49,7 +57,11 @@ export class ProviderDrizzleRepository implements IProviderRepository {
             row.companyRegistration ?? null,
             row.contactEmail ?? null,
             row.contactPhone ?? null,
-            row.createdAt ?? null
+            row.createdAt ?? null,
+            row.pais ?? null,
+            row.ciudad ?? null,
+            row.billingAddress ?? null,
+            row.oficina ?? null
         );
     }
 
@@ -69,7 +81,11 @@ export class ProviderDrizzleRepository implements IProviderRepository {
             row.companyRegistration ?? null,
             row.contactEmail ?? null,
             row.contactPhone ?? null,
-            row.createdAt ?? null
+            row.createdAt ?? null,
+            row.pais ?? null,
+            row.ciudad ?? null,
+            row.billingAddress ?? null,
+            row.oficina ?? null
         );
     }
 
@@ -85,7 +101,11 @@ export class ProviderDrizzleRepository implements IProviderRepository {
             row.companyRegistration ?? null,
             row.contactEmail ?? null,
             row.contactPhone ?? null,
-            row.createdAt ?? null
+            row.createdAt ?? null,
+            row.pais ?? null,
+            row.ciudad ?? null,
+            row.billingAddress ?? null,
+            row.oficina ?? null
         ));
     }
 
@@ -96,12 +116,20 @@ export class ProviderDrizzleRepository implements IProviderRepository {
             companyRegistration: string | null;
             contactEmail: string | null;
             contactPhone: string | null;
+            pais?: string | null;
+            ciudad?: string | null;
+            billingAddress?: string | null;
+            oficina?: string | null;
         }> = {
             accountId: provider.accountId,
             name: provider.name,
             companyRegistration: provider.companyRegistration,
             contactEmail: provider.contactEmail,
             contactPhone: provider.contactPhone,
+            pais: provider.pais,
+            ciudad: provider.ciudad,
+            billingAddress: provider.billingAddress,
+            oficina: provider.oficina,
         };
 
         Object.keys(values).forEach((key) => {
@@ -129,7 +157,11 @@ export class ProviderDrizzleRepository implements IProviderRepository {
             row.companyRegistration ?? null,
             row.contactEmail ?? null,
             row.contactPhone ?? null,
-            row.createdAt ?? null
+            row.createdAt ?? null,
+            row.pais ?? null,
+            row.ciudad ?? null,
+            row.billingAddress ?? null,
+            row.oficina ?? null
         );
     }
 

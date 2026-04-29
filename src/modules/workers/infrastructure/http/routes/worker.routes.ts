@@ -4,8 +4,8 @@ import { FindAllWorkerAssignmentsUseCase } from "@/core/application/use-cases/wo
 import { FindAllWorkersUseCase } from "@/core/application/use-cases/workers/find-all-workers.use-case.js";
 import { FindWorkerAssignmentsByCafeteriaIdUseCase } from "@/core/application/use-cases/workers/find-worker-assignments-by-cafeteria-id.use-case.js";
 import { FindWorkerAssignmentsByWorkerIdUseCase } from "@/core/application/use-cases/workers/find-worker-assignments-by-worker-id.use-case.js";
-import { FindWorkerByAccountIdUseCase } from "@/core/application/use-cases/workers/find-worker-by-account-id.use-case.js";
 import { FindWorkerByIdUseCase } from "@/core/application/use-cases/workers/find-worker-by-id.use-case.js";
+import { FindWorkerByAccountIdUseCase } from "@/core/application/use-cases/workers/find-worker-by-account-id.use-case.js";
 import { FindWorkersByProviderIdUseCase } from "@/core/application/use-cases/workers/find-workers-by-provider-id.use-case.js";
 import { DeleteWorkerUseCase } from "@/core/application/use-cases/workers/delete-worker.use-case.js";
 import { DeleteWorkerAssignmentUseCase } from "@/core/application/use-cases/workers/delete-worker-assignment.use-case.js";
@@ -45,8 +45,8 @@ export async function workerRoutes(app: FastifyInstance): Promise<void> {
     const deleteWorkerAssignmentUseCase = new DeleteWorkerAssignmentUseCase(assignmentRepository);
     const findAllWorkersUseCase = new FindAllWorkersUseCase(workerRepository);
     const findWorkerByIdUseCase = new FindWorkerByIdUseCase(workerRepository);
-    const findWorkersByProviderIdUseCase = new FindWorkersByProviderIdUseCase(workerRepository);
     const findWorkerByAccountIdUseCase = new FindWorkerByAccountIdUseCase(workerRepository);
+    const findWorkersByProviderIdUseCase = new FindWorkersByProviderIdUseCase(workerRepository);
     const findAllWorkerAssignmentsUseCase = new FindAllWorkerAssignmentsUseCase(assignmentRepository);
     const findWorkerAssignmentsByWorkerIdUseCase = new FindWorkerAssignmentsByWorkerIdUseCase(assignmentRepository);
     const findWorkerAssignmentsByCafeteriaIdUseCase = new FindWorkerAssignmentsByCafeteriaIdUseCase(assignmentRepository);
@@ -59,8 +59,8 @@ export async function workerRoutes(app: FastifyInstance): Promise<void> {
         deleteWorkerAssignmentUseCase,
         findAllWorkersUseCase,
         findWorkerByIdUseCase,
-        findWorkersByProviderIdUseCase,
         findWorkerByAccountIdUseCase,
+        findWorkersByProviderIdUseCase,
         findAllWorkerAssignmentsUseCase,
         findWorkerAssignmentsByWorkerIdUseCase,
         findWorkerAssignmentsByCafeteriaIdUseCase,
@@ -73,7 +73,7 @@ export async function workerRoutes(app: FastifyInstance): Promise<void> {
     app.delete("/workers/assignments/:id", workerController.deleteAssignment.bind(workerController));
     app.get("/workers", workerController.findAllWorkers.bind(workerController));
     app.get("/workers/provider/:providerId", workerController.findWorkersByProviderId.bind(workerController));
-    app.get("/workers/account/:accountId", workerController.findWorkerByAccountId.bind(workerController));
+    app.get("/workers/account/:accountId", workerController.findWorkersByAccountId.bind(workerController));
     app.get("/workers/assignments", workerController.findAllAssignments.bind(workerController));
     app.get("/workers/assignments/worker/:workerId", workerController.findAssignmentsByWorkerId.bind(workerController));
     app.get("/workers/assignments/cafeteria/:cafeteriaId", workerController.findAssignmentsByCafeteriaId.bind(workerController));

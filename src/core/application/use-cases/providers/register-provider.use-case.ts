@@ -7,6 +7,10 @@ interface RegisterProviderDTO {
   companyRegistration?: string;
   contactEmail?: string;
   contactPhone?: string;
+  pais?: string;
+  ciudad?: string;
+  billingAddress?: string;
+  oficina?: string;
 }
 
 export class RegisterProviderUseCase {
@@ -17,8 +21,12 @@ export class RegisterProviderUseCase {
       accountId: dto.accountId,
       name: dto.name,
       companyRegistration: dto.companyRegistration || null,
-      contactEmail: dto.contactEmail || null,
+       contactEmail: dto.contactEmail || null,
       contactPhone: dto.contactPhone || null,
+      pais: dto.pais || null,
+      ciudad: dto.ciudad || null,
+      billingAddress: dto.billingAddress || null,
+      oficina: dto.oficina || null,
     });
   }
 }

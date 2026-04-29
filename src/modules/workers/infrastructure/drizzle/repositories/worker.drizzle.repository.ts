@@ -3,7 +3,7 @@ import { eq } from "drizzle-orm";
 import { Worker } from "@/core/domain/entities/worker.entity.js";
 import type { IWorkerRepository } from "@/core/domain/repositories/worker.repository.js";
 import { db } from "@/shared/database/connection.js";
-import { workers } from "@/shared/database/schema.js";
+import { workers, providers } from "@/shared/database/schema.js";
 
 export class WorkerDrizzleRepository implements IWorkerRepository {
     async create(worker: Omit<Worker, "id" | "createdAt" | "employmentStatus">): Promise<Worker> {
@@ -32,7 +32,8 @@ export class WorkerDrizzleRepository implements IWorkerRepository {
             row.contractType ?? null,
             row.hireDate ?? null,
             row.salary ?? null,
-            row.createdAt ?? null
+            row.createdAt ?? null,
+            null
         );
     }
 
@@ -54,7 +55,8 @@ export class WorkerDrizzleRepository implements IWorkerRepository {
             row.contractType ?? null,
             row.hireDate ?? null,
             row.salary ?? null,
-            row.createdAt ?? null
+            row.createdAt ?? null,
+            null
         );
     }
 
@@ -72,7 +74,8 @@ export class WorkerDrizzleRepository implements IWorkerRepository {
             row.contractType ?? null,
             row.hireDate ?? null,
             row.salary ?? null,
-            row.createdAt ?? null
+            row.createdAt ?? null,
+            null
         ));
     }
 
@@ -91,30 +94,33 @@ export class WorkerDrizzleRepository implements IWorkerRepository {
             row.contractType ?? null,
             row.hireDate ?? null,
             row.salary ?? null,
-            row.createdAt ?? null
+            row.createdAt ?? null,
+            null
         ));
     }
 
-    async findByAccountId(accountId: string): Promise<Worker | null> {
-        const [row] = await db
-            .select()
+    async findByAccountId(accountId: string): Promise<Worker[]> {
+        const rows = await db
+            .select({
+                worker: workers,
+                providerName: providers.name
+            })
             .from(workers)
-            .where(eq(workers.accountId, accountId))
-            .limit(1);
+            .innerJoin(providers, eq(workers.providerId, providers.id))
+            .where(eq(workers.accountId, accountId));
 
-        if (!row) return null;
-
-        return new Worker(
-            row.id,
-            row.accountId,
-            row.providerId,
-            row.employmentStatus ?? null,
-            row.position ?? null,
-            row.contractType ?? null,
-            row.hireDate ?? null,
-            row.salary ?? null,
-            row.createdAt ?? null
-        );
+        return rows.map((row) => new Worker(
+            row.worker.id,
+            row.worker.accountId,
+            row.worker.providerId,
+            row.worker.employmentStatus ?? null,
+            row.worker.position ?? null,
+            row.worker.contractType ?? null,
+            row.worker.hireDate ?? null,
+            row.worker.salary ?? null,
+            row.worker.createdAt ?? null,
+            row.providerName
+        ));
     }
 
     async update(id: string, worker: Partial<Omit<Worker, "id" | "createdAt" | "employmentStatus">>): Promise<Worker | null> {
@@ -161,7 +167,8 @@ export class WorkerDrizzleRepository implements IWorkerRepository {
             row.contractType ?? null,
             row.hireDate ?? null,
             row.salary ?? null,
-            row.createdAt ?? null
+            row.createdAt ?? null,
+            null
         );
     }
 

@@ -4,7 +4,7 @@ import type { IWorkerRepository } from "@/core/domain/repositories/worker.reposi
 export class FindWorkerByAccountIdUseCase {
     constructor(private readonly workerRepo: IWorkerRepository) { }
 
-    async execute(accountId: string): Promise<Worker | null> {
+    async execute(accountId: string): Promise<Worker[]> {
         return this.workerRepo.findByAccountId(accountId);
     }
 }

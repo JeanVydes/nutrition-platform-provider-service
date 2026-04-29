@@ -3,8 +3,8 @@ import { FindAllWorkerAssignmentsUseCase } from '../../../../../core/application
 import { FindAllWorkersUseCase } from '../../../../../core/application/use-cases/workers/find-all-workers.use-case';
 import { FindWorkerAssignmentsByCafeteriaIdUseCase } from '../../../../../core/application/use-cases/workers/find-worker-assignments-by-cafeteria-id.use-case';
 import { FindWorkerAssignmentsByWorkerIdUseCase } from '../../../../../core/application/use-cases/workers/find-worker-assignments-by-worker-id.use-case';
-import { FindWorkerByAccountIdUseCase } from '../../../../../core/application/use-cases/workers/find-worker-by-account-id.use-case';
 import { FindWorkerByIdUseCase } from '../../../../../core/application/use-cases/workers/find-worker-by-id.use-case';
+import { FindWorkerByAccountIdUseCase } from '../../../../../core/application/use-cases/workers/find-worker-by-account-id.use-case';
 import { FindWorkersByProviderIdUseCase } from '../../../../../core/application/use-cases/workers/find-workers-by-provider-id.use-case';
 import { DeleteWorkerUseCase } from '../../../../../core/application/use-cases/workers/delete-worker.use-case';
 import { DeleteWorkerAssignmentUseCase } from '../../../../../core/application/use-cases/workers/delete-worker-assignment.use-case';
@@ -59,19 +59,27 @@ export class WorkerController {
     private deleteWorkerAssignmentUseCase: DeleteWorkerAssignmentUseCase,
     private findAllWorkersUseCase: FindAllWorkersUseCase,
     private findWorkerByIdUseCase: FindWorkerByIdUseCase,
-    private findWorkersByProviderIdUseCase: FindWorkersByProviderIdUseCase,
     private findWorkerByAccountIdUseCase: FindWorkerByAccountIdUseCase,
+    private findWorkersByProviderIdUseCase: FindWorkersByProviderIdUseCase,
     private findAllWorkerAssignmentsUseCase: FindAllWorkerAssignmentsUseCase,
     private findWorkerAssignmentsByWorkerIdUseCase: FindWorkerAssignmentsByWorkerIdUseCase,
     private findWorkerAssignmentsByCafeteriaIdUseCase: FindWorkerAssignmentsByCafeteriaIdUseCase,
   ) { }
 
+  private getAccessToken(req: FastifyRequest): string | undefined {
+    const authorization = req.headers.authorization;
+    if (!authorization?.startsWith('Bearer ')) return undefined;
+    const token = authorization.slice('Bearer '.length).trim();
+    return token || undefined;
+  }
+
   async registerWorker(req: FastifyRequest, reply: FastifyReply) {
     try {
       const data = registerWorkerSchema.parse(req.body);
-      const worker = await this.registerWorkerUseCase.execute(data);
+      const worker = await this.registerWorkerUseCase.execute({ ...data, actorToken: this.getAccessToken(req) });
       return reply.status(201).send(worker);
     } catch (error) {
+      console.error(error);
       if (error instanceof z.ZodError) return reply.status(400).send(error.flatten());
       return reply.status(400).send({ message: (error as Error).message });
     }
@@ -81,7 +89,7 @@ export class WorkerController {
     try {
       const params = z.object({ id: z.string().uuid() }).parse(req.params);
       const data = updateWorkerSchema.parse(req.body);
-      const worker = await this.updateWorkerUseCase.execute(params.id, data);
+      const worker = await this.updateWorkerUseCase.execute(params.id, { ...data, actorToken: this.getAccessToken(req) });
 
       if (!worker) {
         return reply.status(404).send({ message: 'Worker not found' });
@@ -173,16 +181,11 @@ export class WorkerController {
     }
   }
 
-  async findWorkerByAccountId(req: FastifyRequest, reply: FastifyReply) {
+  async findWorkersByAccountId(req: FastifyRequest, reply: FastifyReply) {
     try {
       const params = z.object({ accountId: z.string().uuid() }).parse(req.params);
-      const worker = await this.findWorkerByAccountIdUseCase.execute(params.accountId);
-
-      if (!worker) {
-        return reply.status(404).send({ message: 'Worker not found' });
-      }
-
-      return reply.status(200).send(worker);
+      const workers = await this.findWorkerByAccountIdUseCase.execute(params.accountId);
+      return reply.status(200).send(workers);
     } catch (error) {
       if (error instanceof z.ZodError) return reply.status(400).send(error.flatten());
       return reply.status(400).send({ message: (error as Error).message });

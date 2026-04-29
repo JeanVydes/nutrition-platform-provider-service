@@ -10,6 +10,7 @@ interface UpdateWorkerDTO {
     contractType?: string | null;
     hireDate?: string | null;
     salary?: string | null;
+    actorToken?: string;
 }
 
 export class UpdateWorkerUseCase {
@@ -26,7 +27,7 @@ export class UpdateWorkerUseCase {
         }
 
         if (dto.accountId) {
-            await this.accountValidationService.ensureAccountExists(dto.accountId);
+            await this.accountValidationService.ensureAccountExists(dto.accountId, dto.actorToken);
         }
 
         return this.workerRepo.update(id, {

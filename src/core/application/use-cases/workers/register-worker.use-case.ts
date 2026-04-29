@@ -10,6 +10,7 @@ interface RegisterWorkerDTO {
   contractType?: string;
   hireDate?: string;
   salary?: string;
+  actorToken?: string;
 }
 
 export class RegisterWorkerUseCase {
@@ -17,13 +18,13 @@ export class RegisterWorkerUseCase {
     private readonly workerRepo: IWorkerRepository,
     private readonly providerRepo: IProviderRepository,
     private readonly accountValidationService: IAccountValidationService,
-  ) {}
+  ) { }
 
   async execute(dto: RegisterWorkerDTO): Promise<Worker> {
     const provider = await this.providerRepo.findById(dto.providerId);
     if (!provider) throw new Error('Provider not found');
 
-    await this.accountValidationService.ensureAccountExists(dto.accountId);
+    await this.accountValidationService.ensureAccountExists(dto.accountId, dto.actorToken);
 
     return this.workerRepo.create({
       accountId: dto.accountId,
