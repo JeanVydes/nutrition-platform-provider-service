@@ -10,7 +10,7 @@ export class SchoolConfigDrizzleRepository implements ISchoolConfigRepository {
                 .select({ idColegio: schoolDbConfigs.id })
                 .from(schoolDbConfigs);
 
-            return rows.map((row) => row.idColegio);
+            return rows.map((row: { idColegio: string }) => row.idColegio);
         } catch (error) {
             const message = (error as Error).message || "";
             if (
@@ -27,7 +27,7 @@ export class SchoolConfigDrizzleRepository implements ISchoolConfigRepository {
     async findAll(): Promise<SchoolConfig[]> {
         try {
             const rows = await db.select().from(schoolDbConfigs);
-            return rows.map((row) => new SchoolConfig(
+            return rows.map((row: any) => new SchoolConfig(
                 row.id,
                 row.hostDb,
                 row.portDb,

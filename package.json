@@ -5,6 +5,7 @@
   "private": true,
   "devDependencies": {
     "@types/bun": "latest",
+    "@types/node": "^25.7.0",
     "@types/pg": "^8.16.0",
     "tsc-alias": "^1.8.16",
     "tsconfig-paths": "^4.2.0",

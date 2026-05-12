@@ -1,4 +1,4 @@
-import type { WorkerAssignment } from '../entities/worker-assignment.entity';
+import type { WorkerAssignment } from '@/core/domain/entities/worker-assignment.entity';
 export interface IWorkerAssignmentRepository {
   create(assignment: Omit<WorkerAssignment, 'id'>): Promise<WorkerAssignment>;
   findAll(): Promise<WorkerAssignment[]>;

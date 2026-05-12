@@ -1,9 +1,9 @@
-import type { ISchoolConfigRepository } from '../../../domain/repositories/school-config.repository';
+import type { ISchoolConfigRepository } from '@/core/domain/repositories/school-config.repository';
 
 export class FindAllSchoolIdsUseCase {
-  constructor(private readonly schoolConfigRepo: ISchoolConfigRepository) {}
+    constructor(private readonly schoolConfigRepo: ISchoolConfigRepository) { }
 
-  async execute(): Promise<string[]> {
-    return this.schoolConfigRepo.findAllSchoolIds();
-  }
+    async execute(): Promise<string[]> {
+        return this.schoolConfigRepo.findAllSchoolIds();
+    }
 }

@@ -145,7 +145,7 @@ export async function createApp(): Promise<FastifyInstance> {
         });
     });
 
-    // Plugins
+    // cors
     await app.register(cors, {
         origin: (origin, callback) => {
             if (!origin) return callback(null, true);

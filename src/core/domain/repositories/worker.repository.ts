@@ -1,4 +1,4 @@
-import type { Worker } from '../entities/worker.entity';
+import type { Worker } from '@/core/domain/entities/worker.entity';
 export interface IWorkerRepository {
   create(worker: Omit<Worker, 'id' | 'createdAt' | 'employmentStatus'>): Promise<Worker>;
   findById(id: string): Promise<Worker | null>;

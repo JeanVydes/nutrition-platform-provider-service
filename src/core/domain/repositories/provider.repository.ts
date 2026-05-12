@@ -1,9 +1,9 @@
-import type { Provider } from '../entities/provider.entity';
+import type { Provider } from '@/core/domain/entities/provider.entity';
 export interface IProviderRepository {
-  create(provider: Omit<Provider, 'id' | 'createdAt'>): Promise<Provider>;
-  findById(id: string): Promise<Provider | null>;
-  findByAccountId(accountId: string): Promise<Provider | null>;
-  findAll(): Promise<Provider[]>;
-  update(id: string, provider: Partial<Omit<Provider, 'id' | 'createdAt'>>): Promise<Provider | null>;
-  deleteById(id: string): Promise<boolean>;
+    create(provider: Omit<Provider, 'id' | 'createdAt'>): Promise<Provider>;
+    findById(id: string): Promise<Provider | null>;
+    findByAccountId(accountId: string): Promise<Provider | null>;
+    findAll(): Promise<Provider[]>;
+    update(id: string, provider: Partial<Omit<Provider, 'id' | 'createdAt'>>): Promise<Provider | null>;
+    deleteById(id: string): Promise<boolean>;
 }
